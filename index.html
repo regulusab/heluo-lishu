@@ -1,0 +1,54 @@
+<!doctype html><html lang="zh-Hant-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>河洛理數批命</title>
+<style>
+:root{--ink:#2b2118;--paper:#f6f0e3;--card:#fffaf0;--red:#9b2c1f;--gold:#b08a3e;--mut:#7a6a58;--line:#e2d5bd}
+*{box-sizing:border-box}body{margin:0;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;background:var(--paper);color:var(--ink);line-height:1.75}
+header{background:linear-gradient(135deg,#3b1f14,#7a2a1c);color:#f6e7c8;padding:28px 16px;text-align:center}
+header h1{margin:0;font-size:2.1em;letter-spacing:.3em}header p{margin:6px 0 0;opacity:.85}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0;box-shadow:0 1px 3px #0001}
+h2{margin:0 0 10px;color:var(--red);font-size:1.25em;border-left:4px solid var(--gold);padding-left:8px}
+h3{margin:12px 0 6px;color:#5a3a22}
+.form{display:flex;flex-wrap:wrap;gap:10px;align-items:end}.form label{display:flex;flex-direction:column;font-size:.9em;color:var(--mut)}
+input,select,button{font:inherit;padding:6px 10px;border:1px solid #c9b896;border-radius:6px;background:#fff}
+button{cursor:pointer}.btn{background:var(--red);color:#fff;border-color:var(--red)}
+.schools{display:flex;gap:8px;flex-wrap:wrap}.schools button{border-radius:20px;padding:6px 16px}
+.schools button.on{background:var(--red);color:#fff;border-color:var(--red)}
+.sub{font-size:.85em;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+table{border-collapse:collapse;width:100%;font-size:.92em}td,th{border:1px solid var(--line);padding:4px 6px;text-align:center}th{background:#f1e6cf}
+tr.sel td{background:#fde9c8}tr.click{cursor:pointer}tr.click:hover td{background:#fbf1de}
+.gua{display:flex;gap:16px;align-items:center}.lines{display:flex;flex-direction:column-reverse;gap:5px;width:84px}
+.ln{height:11px;display:flex;justify-content:space-between;position:relative}.ln i{background:#3a2a1c;height:100%;display:block}
+.ln.y i{width:100%}.ln.n i{width:42%}.ln.on i{background:var(--red)}.ln.on:after{content:"◀";position:absolute;right:-18px;top:-6px;color:var(--red);font-size:.8em}
+.big{font-size:1.5em;font-weight:bold}.warn{background:#fff4e0;border:1px dashed #d19a3a;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:.9em}
+.warn b{color:#a3561a}.diff{background:#eef6ff;border:1px dashed #6b8fb8}
+.txt{white-space:pre-wrap}.pill{display:inline-block;padding:0 8px;border-radius:10px;background:#efe3c9;margin:2px;font-size:.88em}
+.pillars{display:flex;gap:10px}.pillars div{text-align:center;border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:#fff}
+.pillars b{font-size:1.5em;display:block;writing-mode:vertical-rl;margin:0 auto}
+details summary{cursor:pointer;color:#5a3a22;font-weight:bold}
+footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
+.months{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.months div{border:1px solid var(--line);border-radius:6px;padding:4px;text-align:center;background:#fff;font-size:.9em}
+@media(max-width:600px){.months{grid-template-columns:repeat(3,1fr)}header h1{font-size:1.6em}}
+</style></head><body>
+<header><h1>河洛理數批命</h1><p>陳希夷・邵康節遺法　以生辰八字起卦，推先後天卦、元堂、大運、流年流月</p></header>
+<main>
+<section class="card"><h2>生辰資料</h2>
+<div class="form">
+<label>西曆出生日期<input type="date" id="date" value="1990-06-15"></label>
+<label>出生時間<input type="time" id="time" value="08:30"></label>
+<label>性別<select id="sex"><option value="1">男（乾造）</option><option value="0">女（坤造）</option></select></label>
+<label>陰陽男女依<select id="pol"><option value="year">年干（通行）</option><option value="hour">時干（異說）</option></select></label>
+<label>子時換日<select id="zi"><option value="2">23:00 即換日</option><option value="1">0:00 才換日（晚子時）</option></select></label>
+<button class="btn" id="go">起　卦</button>
+</div>
+<p class="sub">時間請輸入當地標準時間（不含夏令時）。日期由 lunar-javascript 換算農曆與節氣四柱。</p>
+<h3>派別切換</h3><div class="schools" id="schools"></div>
+<div id="schoolInfo" class="sub"></div>
+</section>
+<div id="out"></div>
+<footer>資料來源：使用者提供之《河洛理數》原典掃描本、《河洛理數推命術》、《河洛理數斷文》、《歲運六十四卦訣》、鍾月萍《新編河洛理數論命》、崔仁慧《河洛理數入門起例講義》；卦爻辭取自《周易》原文。本站僅供文化研究參考。</footer>
+</main>
+<script src="lunar.js"></script><script src="data.js"></script><script src="engine.js"></script><script src="calc.js"></script>
+<script src="app.js"></script>
+</body></html>
