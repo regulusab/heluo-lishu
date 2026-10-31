@@ -5,7 +5,7 @@ var POS='初二三四五上';
 function yaoName(bits,p){ var y=bits[p]==='1'; if(p===0) return '初'+(y?'九':'六'); if(p===5) return '上'+(y?'九':'六'); return (y?'九':'六')+POS[p]; }
 function hx(b){ return HEX[b]; }
 function esc(s){ return String(s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
-var NOTES={
+var NOTES=window.HeluoNotes={
  guben:['乾坤二卦元堂：女命得乾生於冬至後夏至前、男命得坤生於夏至後冬至前，自上爻逆排；其餘順排。',
    '至尊卦（坎、屯、蹇）元堂在九五：陰令生「變而不易」（只變元堂爻，上下卦不換）；在上六：陽令生「變而不易」。',
    '「陰令／陽令」：推命術本以農曆月份奇偶（正三五七九十一為陽）判斷——原典「陰令」或指夏至後至冬至前，文意未盡明確，本站依推命術採農曆月奇偶。',
@@ -32,13 +32,38 @@ function texts(b,p,ctx){
   s+='<details><summary>全卦六爻爻辭</summary><div>'+h.yao.map(esc).join('<br>')+'</div></details>';
   return s+'</div>';
 }
-function read(){ var d=document.getElementById('date').value.split('-'), t=document.getElementById('time').value.split(':');
-  return {y:+d[0],m:+d[1],d:+d[2],h:+t[0],mi:+t[1],male:document.getElementById('sex').value==='1'}; }
-function opts(){ return {polarity:document.getElementById('pol').value, ziSect:+document.getElementById('zi').value}; }
+function $(id){ return document.getElementById(id); }
+var mode='auto';
+function getPillars(){ return [0,1,2,3].map(function(i){ return $('pg'+i).value+$('pz'+i).value; }); }
+function settings(){
+  return {mode:mode, date:$('date').value, time:$('time').value, zi:$('zi').value, sex:$('sex').value, pol:$('pol').value,
+    school:cur, pillars:getPillars(), byear:$('byear').value, winter:$('winter').value, startAge:+$('startAge').value||1, focus:$('focus').value.trim()};
+}
+function applySettings(o){ if(!o) return;
+  ['date','time','zi','sex','pol','winter','startAge','focus'].forEach(function(k){ if(o[k]!=null&&o[k]!=='') $(k).value=o[k]; });
+  if(o.focus==='') $('focus').value='';
+  if(o.school&&S[o.school]) cur=o.school;
+  if(o.pillars&&o.pillars.length===4) setPillars(o.pillars);
+  if(o.byear){ fillYears(); $('byear').value=o.byear; }
+  setMode(o.mode||'auto'); schoolsUI();
+}
+function setPillars(pl){ pl.forEach(function(p,i){ if(p&&p.length===2){ $('pg'+i).value=p[0]; $('pz'+i).value=p[1]; } }); $('pillarTxt').value=pl.join(' '); fillYears(); }
+function fillYears(){ var gz=$('pg0').value+$('pz0').value, prev=$('byear').value, ys=C.yearsFor(gz);
+  $('byear').innerHTML=ys.length?ys.map(function(y){return '<option>'+y+'</option>';}).join(''):'<option value="">（年柱陰陽不配）</option>';
+  if(ys.indexOf(+prev)>=0) $('byear').value=prev; else { var now=new Date().getFullYear(), best=ys.filter(function(y){return y<=now;}).pop(); if(best) $('byear').value=best; } }
+function setMode(m){ mode=m; $('autoBox').style.display=m==='auto'?'flex':'none'; $('manBox').style.display=m==='manual'?'block':'none';
+  Array.prototype.forEach.call(document.querySelectorAll('#modeSw button'),function(b){ b.className=b.dataset.mode===m?'on':''; }); }
+function opts(){ return {polarity:$('pol').value, ziSect:+$('zi').value, startAge:+$('startAge').value||1}; }
+function calcFor(sc){ var st=settings();
+  if(st.mode==='manual') return C.computeManual({pillars:st.pillars, male:st.sex==='1', birthYear:+st.byear, winter:st.winter, startAge:st.startAge}, S[sc], opts());
+  var d=st.date.split('-'), t=st.time.split(':');
+  return C.compute({y:+d[0],m:+d[1],d:+d[2],h:+t[0],mi:+t[1],male:st.sex==='1'}, S[sc], opts()); }
 function render(){
-  var inp=read(); if(!inp.y){return;}
-  var R; try{ R=C.compute(inp,S[cur],opts()); }catch(e){ document.getElementById('out').innerHTML='<div class="card warn">計算失敗：'+esc(e.message)+'</div>'; return; }
-  var all={}; for(var k in S) all[k]=C.compute(inp,S[k],opts());
+  var inp={male:$('sex').value==='1'};
+  var R; try{ R=calcFor(cur); }catch(e){ $('out').innerHTML='<div class="card warn">計算失敗：'+esc(e.message)+'</div>'; window.LAST=null; return; }
+  if(mode==='manual'){ var ws=R.warnings||[], ns=R.notes||[]; $('manWarn').innerHTML=(ws.length?'<div class="warn'+(R.error?' err':'')+'">'+ws.map(esc).join('<br>')+'</div>':'<div class="sub">✔ 四柱干支檢核通過（陰陽相配、五虎遁、五鼠遁皆合）</div>')+(ns.length?'<div class="warn">'+ns.map(esc).join('<br>')+'</div>':''); }
+  if(R.error){ $('out').innerHTML='<div class="card warn err">四柱有誤，無法起卦：'+R.warnings.map(esc).join('；')+'</div>'; window.LAST=null; return; }
+  var all={}; for(var k in S) all[k]=calcFor(k);
   var out='';
   // 四柱
   out+='<section class="card"><h2>一、四柱與天地數</h2><div class="grid"><div><div class="pillars">'+['年','月','日','時'].map(function(n,i){return '<div>'+n+'柱<b>'+R.pillars[i]+'</b></div>';}).join('')+'</div>'
@@ -47,7 +72,7 @@ function render(){
    +'<p>天數（奇）<b>'+R.tian+'</b>：'+R.tr.steps.join(' ')+' → 取 <b>'+R.tr.value+'</b> → '+R.tT.t+(R.tT.ji?'（五寄宮）':'')+'<br>地數（偶）<b>'+R.di+'</b>：'+R.dr.steps.join(' ')+' → 取 <b>'+R.dr.value+'</b> → '+R.dT.t+(R.dT.ji?'（五寄宮）':'')+'</p>'
    +'<div class="sub">天數過 25 減 25、地數過 30 減 30；餘數取個位，整十取十位。推命術言「減去 25 的倍數」，若恰為 25／50 之類，本站取 5 寄宮（各派皆同）。</div></div></div>';
   var tq=(cur==='cui')? strength(R):'';
-  out+=tq+'<p>天元氣（年干納甲）：<span class="pill">'+R.tianyuan+'</span>　化工（月令）：<span class="pill">'+R.huagong+'</span>　'+(has(R,R.tianyuan)?'先後天卦中得天元氣 ✔':'')+' '+(has(R,R.huagong)?'得化工 ✔':'')+'<span class="sub">（化工依二分二至取坎震離兌；四季月土旺十八日之坤艮說各本不一，未採）</span></p></section>';
+  out+=tq+'<p>天元氣（年干納甲）：<span class="pill">'+R.tianyuan+'</span>　化工（月令）：<span class="pill">'+(R.huagong||'手動模式無節氣日，未計')+'</span>　'+(has(R,R.tianyuan)?'先後天卦中得天元氣 ✔':'')+' '+(has(R,R.huagong)?'得化工 ✔':'')+'<span class="sub">（化工依二分二至取坎震離兌；四季月土旺十八日之坤艮說各本不一，未採）</span></p></section>';
   // 卦
   out+='<section class="card"><h2>二、先天卦・後天卦（'+S[cur].name+'）</h2><div class="grid">'+guaCard('先天卦',R.xian.bits,R.xian.pos,R.xian.note)+guaCard('後天卦',R.hou.bits,R.hou.pos,R.hou.note)+'</div>';
   // differences
@@ -58,7 +83,7 @@ function render(){
   out+='<section class="card"><h2>三、大運（陽爻九年、陰爻六年，虛歲）</h2><table><tr><th>卦</th><th>運爻</th><th>年歲</th><th>西元</th><th>起運年干</th></tr>';
   R.dayun.forEach(function(d,i){ out+='<tr class="click'+(state.dy===i?' sel':'')+'" data-dy="'+i+'"><td>'+d.gua+' '+hx(d.bits).name+'</td><td>'+yaoName(d.bits,d.pos)+'</td><td>'+d.from+'–'+d.to+'</td><td>'+d.yearFrom+'–'+d.yearTo+'</td><td>'+d.firstStem+(d.firstYang?'（陽）':'（陰）')+'</td></tr>'; });
   out+='</table><p class="sub">點選任一大運以展開流年。'+(cur==='guben'?'古本以正月初一為歲首':'本派以立春為歲首')+'計算西元年。</p>';
-  var now=new Date().getFullYear(); if(state.dy===null){ state.dy=0; R.dayun.forEach(function(d,i){ if(now>=d.yearFrom&&now<=d.yearTo) state.dy=i; }); }
+  var now=new Date().getFullYear(), fy=focusYear(R); if(fy) now=fy; if(state.dy===null){ state.dy=0; R.dayun.forEach(function(d,i){ if(now>=d.yearFrom&&now<=d.yearTo) state.dy=i; }); }
   var D=R.dayun[Math.min(state.dy,R.dayun.length-1)];
   out+='<h3>流年：'+D.gua+'卦 '+hx(D.bits).name+' '+yaoName(D.bits,D.pos)+'運（'+D.from+'–'+D.to+'歲）</h3><table><tr><th>虛歲</th><th>西元</th><th>干支</th><th>流年卦</th><th>流年元堂</th></tr>';
   if(state.yr===null||state.yr>=D.years.length){ state.yr=0; D.years.forEach(function(y,i){ if(y.year===now) state.yr=i; }); }
@@ -68,7 +93,7 @@ function render(){
   out+='<h3>流月：'+Y.year+'年（'+Y.gz+'）'+hx(Y.bits).name+'</h3><div class="months">'+M.map(function(m,i){return '<div>'+(i+1)+'月<br><b>'+hx(m.bits).name+'</b><br><span class="sub">'+yaoName(m.bits,m.changed)+'</span></div>';}).join('')+'</div><p class="sub">正月變流年元堂上一爻，三、五…十一月逐爻上變；雙月取前一單月變爻之應爻（依推命術例）。月份依節氣月。</p></section>';
   out+=texts(R.xian.bits,R.xian.pos,'先天卦批文')+texts(R.hou.bits,R.hou.pos,'後天卦批文');
   out+=texts(D.bits,D.pos,'本大運')+texts(Y.bits,Y.changed,Y.year+'流年');
-  document.getElementById('out').innerHTML=out;
+  $('out').innerHTML=out; window.LAST={R:R,D:D,Y:Y,M:M,school:S[cur],settings:settings(),all:all};
   Array.prototype.forEach.call(document.querySelectorAll('[data-dy]'),function(tr){tr.onclick=function(){state.dy=+tr.dataset.dy;state.yr=null;render();};});
   Array.prototype.forEach.call(document.querySelectorAll('[data-yr]'),function(tr){tr.onclick=function(){state.yr=+tr.dataset.yr;render();};});
 }
@@ -82,7 +107,21 @@ function schoolsUI(){
   Object.keys(S).forEach(function(k){ var b=document.createElement('button'); b.textContent=S[k].name; b.className=k===cur?'on':''; b.onclick=function(){cur=k;schoolsUI();render();}; el.appendChild(b); });
   document.getElementById('schoolInfo').innerHTML='<p>依據：'+S[cur].src+'</p><div class="warn"><b>本派要點與歧義說明</b><ul>'+NOTES[cur].map(function(n){return '<li>'+n+'</li>';}).join('')+'</ul></div>';
 }
-['date','time','sex','pol','zi'].forEach(function(id){ document.getElementById(id).onchange=function(){state.dy=null;state.yr=null;render();}; });
-document.getElementById('go').onclick=function(){state.dy=null;state.yr=null;render();};
+function focusYear(R){ var f=$('focus').value.trim(); if(!f) return null; if(/^\d{3,4}$/.test(f)) return +f;
+  var i=C.JZ.indexOf(f); if(i<0) return null; var now=new Date().getFullYear(), best=null;
+  R.dayun.forEach(function(d){ d.years.forEach(function(y){ if(y.gz===f && (best===null||Math.abs(y.year-now)<Math.abs(best-now))) best=y.year; }); }); return best; }
+// 四柱選單
+(function(){ var h=''; ['年','月','日','時'].forEach(function(n,i){ h+='<label>'+n+'柱<span style="display:flex;gap:2px"><select id="pg'+i+'">'+H.GAN.split('').map(function(g){return '<option>'+g+'</option>';}).join('')+'</select><select id="pz'+i+'">'+H.ZHI.split('').map(function(z){return '<option>'+z+'</option>';}).join('')+'</select></span></label>'; });
+  $('pillarSel').innerHTML=h; setPillars(['癸巳','甲子','丁酉','甲辰']); })();
+function rerun(){ state.dy=null; state.yr=null; render(); }
+['date','time','sex','pol','zi','winter','byear','startAge','focus'].forEach(function(id){ $(id).onchange=rerun; });
+[0,1,2,3].forEach(function(i){ $('pg'+i).onchange=$('pz'+i).onchange=function(){ $('pillarTxt').value=getPillars().join(' '); if(i===0) fillYears(); rerun(); }; });
+$('pillarTxt').onchange=function(){ var t=$('pillarTxt').value.replace(/[年月日時柱,，、\s]+/g,''); if(t.length!==8){ $('manWarn').innerHTML='<div class="warn err">請輸入八個字（四柱干支），例：癸巳甲子丁酉甲辰</div>'; return; }
+  var pl=[t.slice(0,2),t.slice(2,4),t.slice(4,6),t.slice(6,8)], bad=pl.filter(function(p){return H.GAN.indexOf(p[0])<0||H.ZHI.indexOf(p[1])<0;});
+  if(bad.length){ $('manWarn').innerHTML='<div class="warn err">無法辨識：'+bad.join('、')+'</div>'; return; } setPillars(pl); rerun(); };
+Array.prototype.forEach.call(document.querySelectorAll('#modeSw button'),function(b){ b.onclick=function(){ setMode(b.dataset.mode); rerun(); }; });
+$('go').onclick=rerun;
+window.HeluoApp={settings:settings, applySettings:function(o){ applySettings(o); rerun(); }, rerun:rerun, setMode:setMode};
+var q=window.HeluoCases&&HeluoCases.fromURL(); if(q) applySettings(q);
 schoolsUI(); render();
 })();

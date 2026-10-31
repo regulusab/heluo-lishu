@@ -1,5 +1,5 @@
 <!doctype html><html lang="zh-Hant-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>河洛理數批命</title>
+<link rel="icon" href="data:,"><title>河洛理數批命</title>
 <style>
 :root{--ink:#2b2118;--paper:#f6f0e3;--card:#fffaf0;--red:#9b2c1f;--gold:#b08a3e;--mut:#7a6a58;--line:#e2d5bd}
 *{box-sizing:border-box}body{margin:0;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;background:var(--paper);color:var(--ink);line-height:1.75}
@@ -30,25 +30,59 @@ details summary{cursor:pointer;color:#5a3a22;font-weight:bold}
 footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
 .months{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.months div{border:1px solid var(--line);border-radius:6px;padding:4px;text-align:center;background:#fff;font-size:.9em}
 @media(max-width:600px){.months{grid-template-columns:repeat(3,1fr)}header h1{font-size:1.6em}}
+.btnlike{display:inline-block;padding:6px 10px;border:1px solid #c9b896;border-radius:6px;background:#fff;cursor:pointer;color:var(--ink);font-size:1em;flex-direction:row}
+#modeSw button.on{background:var(--red);color:#fff}#modeSw button{border-radius:20px;padding:6px 16px}
+.err{background:#fde3df;border-color:#c0392b}
+@media print{.noprint,header p,#modeSw,.schools,#schoolInfo,.form,.sub.hint,footer{display:none!important}body{background:#fff}.card{box-shadow:none;break-inside:auto}details{display:block}details>*{display:block}main{max-width:none}section.card:first-of-type{display:none}}
 </style></head><body>
 <header><h1>河洛理數批命</h1><p>陳希夷・邵康節遺法　以生辰八字起卦，推先後天卦、元堂、大運、流年流月</p></header>
 <main>
-<section class="card"><h2>生辰資料</h2>
-<div class="form">
+<section class="card"><h2>命造輸入</h2>
+<div class="schools" id="modeSw"><button data-mode="auto" class="on">依西曆生辰</button><button data-mode="manual">手動輸入四柱</button></div>
+<div id="autoBox" class="form" style="margin-top:10px">
 <label>西曆出生日期<input type="date" id="date" value="1990-06-15"></label>
 <label>出生時間<input type="time" id="time" value="08:30"></label>
+<label>子時換日<select id="zi"><option value="2">23:00 即換日</option><option value="1">0:00 才換日（晚子時）</option></select></label>
+</div>
+<div id="manBox" style="display:none;margin-top:10px">
+<div class="form" id="pillarSel"></div>
+<div class="form" style="margin-top:8px">
+<label>或直接鍵入四柱<input id="pillarTxt" placeholder="例：癸巳 甲子 丁酉 甲辰" size="22"></label>
+<label>出生西元年（定三元與流年）<select id="byear"></select></label>
+<label>二至（乾坤元堂用）<select id="winter"><option value="auto">依月支推定</option><option value="yes">冬至後・夏至前</option><option value="no">夏至後・冬至前</option></select></label>
+</div>
+<div id="manWarn"></div>
+</div>
+<div class="form" style="margin-top:10px">
 <label>性別<select id="sex"><option value="1">男（乾造）</option><option value="0">女（坤造）</option></select></label>
 <label>陰陽男女依<select id="pol"><option value="year">年干（通行）</option><option value="hour">時干（異說）</option></select></label>
-<label>子時換日<select id="zi"><option value="2">23:00 即換日</option><option value="1">0:00 才換日（晚子時）</option></select></label>
+<label>起運虛歲（覆寫）<input type="number" id="startAge" min="1" max="20" value="1" style="width:5em"></label>
+<label>指定流年（西元或干支）<input id="focus" placeholder="例：2026 或 丙午" size="12"></label>
 <button class="btn" id="go">起　卦</button>
 </div>
-<p class="sub">時間請輸入當地標準時間（不含夏令時）。日期由 lunar-javascript 換算農曆與節氣四柱。</p>
+<p class="sub">時間請輸入當地標準時間（不含夏令時）。日期由 lunar-javascript 換算農曆與節氣四柱。手動模式下干支陰陽不配會擋下計算；五虎遁、五鼠遁不合只提示不阻擋。</p>
 <h3>派別切換</h3><div class="schools" id="schools"></div>
 <div id="schoolInfo" class="sub"></div>
+</section>
+<section class="card noprint"><h2>命例與輸出</h2>
+<div class="form">
+<label>命例名稱<input id="caseName" placeholder="例：王先生" size="14"></label>
+<label style="flex:1;min-width:220px">備註<textarea id="caseNote" rows="1" style="font:inherit;padding:6px"></textarea></label>
+<button id="caseSave">儲存命例</button>
+<label>已存命例<select id="caseList"><option value="">（無）</option></select></label>
+<button id="caseLoad">載入</button><button id="caseRename">改名</button><button id="caseDel">刪除</button>
+</div>
+<div class="form" style="margin-top:8px">
+<button id="caseExport">匯出命例 JSON</button><label class="btnlike">匯入命例 JSON<input type="file" id="caseImport" accept=".json,application/json" style="display:none"></label>
+<span style="flex:1"></span>
+<button class="btn" id="dlDocx">下載 Word</button><button class="btn" id="dlPdf">下載 PDF</button><button id="print">列印／另存 PDF</button><button id="share">分享</button><button id="copyLink">複製分享連結</button>
+</div>
+<div id="msg" class="sub"></div>
+<p class="sub">命例存於本瀏覽器（localStorage），換裝置請用匯出／匯入 JSON。分享連結只含輸入參數，不含備註。</p>
 </section>
 <div id="out"></div>
 <footer>資料來源：使用者提供之《河洛理數》原典掃描本、《河洛理數推命術》、《河洛理數斷文》、《歲運六十四卦訣》、鍾月萍《新編河洛理數論命》、崔仁慧《河洛理數入門起例講義》；卦爻辭取自《周易》原文。本站僅供文化研究參考。</footer>
 </main>
 <script src="lunar.js"></script><script src="data.js"></script><script src="engine.js"></script><script src="calc.js"></script>
-<script src="app.js"></script>
+<script src="cases.js"></script><script src="export.js"></script><script src="app.js"></script>
 </body></html>
