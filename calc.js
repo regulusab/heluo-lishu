@@ -11,7 +11,7 @@ function compute(inp, school, opts){
   var lib=L(); opts=opts||{};
   var solar=lib.Solar.fromYmdHms(inp.y,inp.m,inp.d,inp.h,inp.mi||0,0);
   var lunar=solar.getLunar();
-  var ec=lunar.getEightChar(); ec.setSect(opts.ziSect||2); // 2：23 時即換日（傳統早子時）；1：晚子時日柱不換
+  var ec=lunar.getEightChar(); ec.setSect(opts.ziSect||2); // 2：0:00 才換日（23:00–24:00 仍屬當日，晚子時）；1：23:00 即換日（傳統早子時）
   var yG=ec.getYear(), mG=ec.getMonth(), dG=ec.getDay(), hG=ec.getTime();
   var yearNum=ganzhiYearStart(yG, lunar.getYear());
   // 二至
