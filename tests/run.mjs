@@ -59,10 +59,10 @@ ok('exactly 70E no shift', !at70.dayLine.applied && at70.pillars.join(' ')==='�
 
 const west=C.compute({y:2000,m:1,d:1,h:0,mi:0,male:true}, S.guben, {lon:69.99});
 const jan2=C.compute({y:2000,m:1,d:2,h:0,mi:0,male:true}, S.guben, {});
-ok('just west of 70E adds one day', west.dayLine.applied && west.pillars.join(' ')===jan2.pillars.join(' '));
+ok('just west of 70E day-pillar 干支 advances one', west.dayLine.applied && west.pillars.join(' ')===jan2.pillars.join(' '));
 
 const london=C.compute({y:2000,m:1,d:1,h:0,mi:0,male:true}, S.guben, {lon:-0.13, place:'london'});
-ok('london pillars match next civil day', london.pillars.join(' ')===jan2.pillars.join(' ') && /只有干支加一天/.test(london.solarText));
+ok('london day/hour 干支 match next civil day, year/month from same LMT', london.pillars.join(' ')===jan2.pillars.join(' ') && /東經 70° 以西日柱干支進一位（日期不動）/.test(london.solarText));
 const londonNext=C.compute({y:2000,m:1,d:2,h:0,mi:0,male:true}, S.guben, {lon:-0.13});
 ok('london lunar is unshifted 出生地農曆 (冬月廿六, not +1 date)', london.lunarInfo.source==='local' && /冬月廿六/.test(london.lunarInfo.text) && london.lunarInfo.day===londonNext.lunarInfo.day-1);
 
@@ -158,8 +158,8 @@ const west122=C.compute({y:2026,m:10,d:12,h:12,mi:1,male:true}, S.guben, {lon:-1
 ok('fictional 122W pillars', west122.pillars.join(' ')==='丙午 戊戌 庚申 壬午');
 ok('fictional 122W 出生地農曆九月初三', west122.lunarInfo.month===9 && west122.lunarInfo.day===3 && west122.lunarInfo.leap===false && /九月初三/.test(west122.lunarInfo.text));
 ok('fictional 122W 先天萃初六 後天歸妹九四', west122.xian.bits==='000110' && west122.xian.pos===0 && west122.hou.bits==='110100' && west122.hou.pos===3);
-ok('fictional 122W 農曆不隨干支加一天', west122.dayLine.applied && !/排盤用/.test(west122.solarText));
-// 節氣／化工須用未加一天的 10-12，而非 10-13
+ok('fictional 122W wording and lunar date unshifted', west122.dayLine.applied && /東經 70° 以西日柱干支進一位（日期不動）/.test(west122.solarText) && !/排盤用|加一天/.test(west122.solarText));
+// 節氣／化工須用所填地方平時 10-12，日期不動
 ok('fictional 122W 化工依未移位日時', west122.huagong==='兌' || west122.huagong==='離' || west122.huagong==='坎' || west122.huagong==='震');
 
 const noLon122=C.compute({y:2026,m:10,d:12,h:12,mi:1,male:true}, S.guben, {});
@@ -195,12 +195,18 @@ ok('Taipei 10:21 LMT already 庚午 戊寅', tpAfter.pillars[0]==='庚午' && tp
 ok('same 10:16 without lon already 庚午 戊寅 (東八區 10:14 已交節)', tpCst.pillars.join(' ')==='庚午 戊寅 庚子 辛巳');
 ok('中州 虛歲年隨 LMT 立春', C.compute({y:1990,m:2,d:4,h:10,mi:16,male:true}, S.zhong, {lon:121.57}).firstYear===1989 && C.compute({y:1990,m:2,d:4,h:10,mi:21,male:true}, S.zhong, {lon:121.57}).firstYear===1990);
 
-// 西經 122.68，寒露地方平時約 2026-10-07 22:18。22:10 尚未交節，但 70°E +1 日到 10-08 22:10 已過寒露，年月柱隨之。
+// 西經 122.68，寒露地方平時約 2026-10-07 22:18:34。22:10 尚未交節；日柱干支進一位，年月柱不隨之。
 const westNear=C.compute({y:2026,m:10,d:7,h:22,mi:10,male:true}, S.guben, {lon:-122.68});
 const eastSame=C.compute({y:2026,m:10,d:7,h:22,mi:10,male:true}, S.guben, {lon:80});
-ok('west-of-70 near 節: +1 day crosses 寒露, month becomes 戊戌', westNear.dayLine.applied && westNear.pillars.join(' ')==='丙午 戊戌 乙卯 丁亥');
+ok('west-of-70 near 節: month stays 丁酉, day 干支 advances to 乙卯 丁亥', westNear.dayLine.applied && westNear.pillars.join(' ')==='丙午 丁酉 乙卯 丁亥');
 ok('same LMT east of 70 keeps 丁酉 (not yet 寒露)', !eastSame.dayLine.applied && eastSame.pillars.join(' ')==='丙午 丁酉 甲寅 乙亥');
-ok('west-of-70 22:10 lunar not shifted by +1', westNear.lunarInfo && westNear.lunarInfo.source==='local');
+ok('west-of-70 22:10 lunar date unshifted', westNear.lunarInfo && westNear.lunarInfo.source==='local');
+
+// 紐約式晚子時：河洛 0:00 換日，日柱仍為 5/10 再進一位＝丙子，時干起自新日柱的下一日干＝庚子。
+const nyLate=C.compute({y:1990,m:5,d:10,h:23,mi:30,male:true}, S.guben, {lon:-74.0});
+const nyMidnight=C.compute({y:1990,m:5,d:11,h:0,mi:0,male:true}, S.guben, {lon:-74.0});
+ok('NY-like 1990-05-10 23:30 lon -74 is 丙子日 庚子時', nyLate.pillars[2]==='丙子' && nyLate.pillars[3]==='庚子');
+ok('河洛 0:00 換日：同地 5/11 00:00 日柱已不同', nyMidnight.pillars[2]!==nyLate.pillars[2] && nyMidnight.pillars[2]==='丁丑');
 
 console.log(fail===0?('\nAll '+n+' tests passed.'):('\n'+fail+'/'+n+' failed.'));
 process.exit(fail?1:0);

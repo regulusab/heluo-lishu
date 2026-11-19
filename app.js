@@ -84,7 +84,7 @@ function render(){
    +'<p>地方平時 '+esc(R.clockText||R.solarText)+'<br>'+(R.lunarInfo&&R.lunarInfo.source==='local'?'出生地農曆 ':'農曆 ')+esc(R.lunarInfo? (R.lunarInfo.text+' '+R.pillars[3][1]+'時') : R.lunarText)+'<br>'+(R.yangYear?'陽':'陰')+'年生'+(inp.male?'男':'女')+'・'+(R.shun?'天數卦在上':'地數卦在上')+'（'+(R.yangP?'陽':'陰')+(inp.male?'男':'女')+'，依'+(opts().polarity==='hour'?'時干':'年干')+'）・'+R.yuan+(R.precision&&R.precision!=='exact'?'　時間精度（記錄）：'+(window.HeluoPlace&&HeluoPlace.PREC_LABEL[R.precision]||R.precision):'')+(R.place||R.lon!=null?'　出生地：'+esc(placeLabel(R)):'')+'</p>'
    +(R.lunarInfo&&R.lunarInfo.note?'<p class="cite">'+esc(R.lunarInfo.note)+'</p>':'')
    +(R.jieqiNote?'<p class="cite">'+esc(R.jieqiNote)+(R.jieqiPrev?(' 上一節／氣：'+esc(R.jieqiPrev)):'' )+'</p>':'')
-   +(R.dayLine&&R.dayLine.applied?'<div class="warn">出生地經度 '+R.dayLine.lon+'°（東經70°以西）：只有干支加一天（日柱及由新日干依五鼠遁重排時柱；若跨節，年月柱隨之）。農曆日以出生地合朔重算，不用加一天後的日期。</div>':'')+'</div>';
+   +(R.dayLine&&R.dayLine.applied?'<div class="warn">出生地經度 '+R.dayLine.lon+'°：東經 70° 以西日柱干支進一位（日期不動）。</div>':'')+'</div>';
   out+='<div><table><tr><th>字</th>'+R.detail.map(function(d){return '<td>'+d.ch+'</td>';}).join('')+'</tr><tr><th>數</th>'+R.detail.map(function(d){return '<td>'+d.nums.join('、')+'</td>';}).join('')+'</tr></table>'
    +'<p>天數（奇）<b>'+R.tian+'</b>：'+R.tr.steps.join(' ')+' → 取 <b>'+R.tr.value+'</b> → '+R.tT.t+(R.tT.ji?'（五寄宮）':'')+'<br>地數（偶）<b>'+R.di+'</b>：'+R.dr.steps.join(' ')+' → 取 <b>'+R.dr.value+'</b> → '+R.dT.t+(R.dT.ji?'（五寄宮）':'')+'</p>'
    +'<div class="sub">天數過 25 減 25、地數過 30 減 30；餘數取個位，整十取十位。推命術言「減去 25 的倍數」，若恰為 25／50 之類，本站取 5 寄宮（各派皆同）。</div></div></div>';

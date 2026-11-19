@@ -14,8 +14,8 @@ function compute(inp, school, opts){
   var solarClock=lib.Solar.fromYmdHms(clockY,clockM,clockD,clockH,clockMi,0);
   var clockText=clockStamp(clockY,clockM,clockD,clockH,clockMi);
   var shift=(root.HeluoPlace?HeluoPlace.dayLineShift(opts.lon):{applied:false,days:0});
-  // 先以未加一天的地方平時＋出生地地方平時節氣排干支，再套東經70°以西只加干支一天（日柱＋五鼠遁重排時柱；若加一天後跨節，年月柱隨之）。
-  // 農曆、節氣、二至、化工、卦氣、日卦皆用未加一天的輸入（地方平時）。
+  // 年月柱只依所填地方平時與出生地地方平時節氣。東經 70° 以西只把日柱干支進一位，時干依五鼠遁從新日干重排。
+  // 河洛預設 0:00 換日（ziSect 2）：23:00–24:00 日柱仍為當日（再進一位），時干起自新日柱的下一日干。日期本身不動，不用來重算農曆、節氣、化工、卦氣、日卦、土王、虛歲或大運。
   function eightChar(solar){
     var e=solar.getLunar().getEightChar(); e.setSect(opts.ziSect||2); // 2：0:00 才換日；1：23:00 即換日
     var yG=e.getYear(), mG=e.getMonth(), ym=null;
@@ -25,10 +25,18 @@ function compute(inp, school, opts){
     }
     return {yG:yG, mG:mG, dG:e.getDay(), hG:e.getTime(), ym:ym};
   }
+  function wuShuHour(dayGz, hourZhi, lateZiNext){
+    var stemDay=lateZiNext?JZ[(idx0(dayGz)+1)%60]:dayGz;
+    var z=H.ZHI.indexOf(hourZhi);
+    return H.GAN[((H.GAN.indexOf(stemDay.charAt(0))%5)*2+z)%10]+hourZhi;
+  }
   var gzClock=eightChar(solarClock);
-  var solarGz=shift.days?solarClock.next(shift.days):solarClock;
-  var gz=shift.days?eightChar(solarGz):gzClock;
-  var yG=gz.yG, mG=gz.mG, dG=gz.dG, hG=gz.hG;
+  var yG=gzClock.yG, mG=gzClock.mG, dG=gzClock.dG, hG=gzClock.hG;
+  if(shift.applied){
+    dG=JZ[(idx0(dG)+1)%60];
+    var lateZi=(opts.ziSect||2)!==1 && clockH>=23;
+    hG=wuShuHour(dG, hG.charAt(1), lateZi);
+  }
   var y=solarClock.getYear(), m=solarClock.getMonth(), d=solarClock.getDay(), h=solarClock.getHour(), mi=solarClock.getMinute();
   var lunarClock=solarClock.getLunar();
   var clockYmd=clockStamp(clockY,clockM,clockD,0,0).slice(0,10);
@@ -64,7 +72,7 @@ function compute(inp, school, opts){
   R.clockText=clockText;
   R.solarText=clockText;
   if(shift.applied){
-    R.solarText=clockText+'；東經70°以西，只有干支加一天（日柱及由新日干依五鼠遁重排時柱；若跨節，年月柱隨之），農曆日以出生地合朔重算，不用加一天後的日期。';
+    R.solarText=clockText+'；東經 70° 以西日柱干支進一位（日期不動）。';
   }
   if(root.HeluoLocalLunar&&HeluoLocalLunar.hasLon(opts.lon)){
     R.jieqiNote=(gzClock.ym&&gzClock.ym.note)||'節氣時刻已換算為出生地地方平時（世界時＋經度×4分鐘）。';

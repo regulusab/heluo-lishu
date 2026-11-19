@@ -55,7 +55,7 @@ function tzOptions(){
   return out;
 }
 
-/* 老師裁定：地方平時下，出生地在東經70°以西，只有干支加一天。未填經度則不套用。農曆不隨之加一天。 */
+/* 老師裁定：東經 70° 以西日柱干支進一位（日期不動）；時干依新日干五鼠遁。未填經度則不套用。年月柱、農曆、節氣皆不因日柱進位而改。 */
 function dayLineShift(lon){
   lon=parseLon(lon);
   if(lon==null) return {applied:false, days:0, lon:null};
