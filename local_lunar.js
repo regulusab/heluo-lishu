@@ -82,6 +82,68 @@ function forHeluo(lon, ymd){
   }
 }
 
-root.HeluoLocalLunar={localLunar:localLunar, lunarText:lunarText, forHeluo:forHeluo, chinaOf:chinaOf, dayNum:dayNum, gzYear:gzYear};
+/* 節氣：lunar-javascript 交節印記為「北京時間」（東八區）。世界時＝印記−8小時。
+   出生地地方平時＝世界時＋經度×4分鐘（不加夏令），即印記＋(經度−120)×4分鐘。
+   未填經度則不換算，比較方式與舊版相同（東八區印記對東八區民用時刻）。
+   1929 年以前中國民用時為北平地方時（約 UTC+7:46），庫仍以東八區印出；本站依印記−8小時，可能與當時鐘點差約 14 分鐘。 */
+var MONTH_JIE_ZHI=[['立春','寅'],['驚蟄','卯'],['清明','辰'],['立夏','巳'],['芒種','午'],['小暑','未'],['立秋','申'],['白露','酉'],['寒露','戌'],['立冬','亥'],['大雪','子'],['小寒','丑']];
+var JIE_ZHI={}; MONTH_JIE_ZHI.forEach(function(x){ JIE_ZHI[x[0]]=x[1]; });
+function civilMs(solar){
+  return Date.UTC(solar.getYear(), solar.getMonth()-1, solar.getDay(), solar.getHour(), solar.getMinute(), solar.getSecond?solar.getSecond():0);
+}
+function hasLon(lon){ return !(lon==null||lon===''); }
+function jieqiLmtMs(solar, lon){
+  var cst=civilMs(solar);
+  if(!hasLon(lon)) return cst;
+  return cst+((+lon)-120)*4*60*1000;
+}
+function compareKey(solar, lon, birth){
+  if(!hasLon(lon)) return solar.getJulianDay();
+  return (birth?civilMs(solar):jieqiLmtMs(solar, lon))/864e5;
+}
+function lmtStamp(ms){
+  var d=new Date(ms);
+  function p(n){ return String(n).padStart(2,'0'); }
+  return d.getUTCFullYear()+'-'+p(d.getUTCMonth()+1)+'-'+p(d.getUTCDate())+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds());
+}
+function monthGanZhi(yearGZ, zhi){
+  var yg=GAN.indexOf(yearGZ[0]), mz=ZHI.indexOf(zhi);
+  var mg=((yg%5)*2+2+((mz-2+12)%12))%10;
+  return GAN[mg]+zhi;
+}
+function yearMonth(lib, solar, lon){
+  var jq, k, s, name, items=[], i, prev=null, lichun=null, birthKey, KEY={惊蛰:'驚蟄',谷雨:'穀雨',小满:'小滿',芒种:'芒種',处暑:'處暑'};
+  var years=[solar.getYear()-1, solar.getYear(), solar.getYear()+1];
+  if(!hasLon(lon)) return null;
+  birthKey=civilMs(solar);
+  years.forEach(function(y){
+    jq=lib.Solar.fromYmd(y,6,15).getLunar().getJieQiTable();
+    for(k in jq){
+      if(!Object.prototype.hasOwnProperty.call(jq,k)) continue;
+      s=jq[k]; if(!s||!s.getYear) continue;
+      name=KEY[k]||k;
+      if(!JIE_ZHI[name]) continue;
+      items.push({name:name, zhi:JIE_ZHI[name], solar:s, lmtMs:jieqiLmtMs(s, lon), cstMs:civilMs(s)});
+    }
+  });
+  items.sort(function(a,b){ return a.lmtMs-b.lmtMs; });
+  for(i=0;i<items.length;i++){
+    if(items[i].lmtMs<=birthKey){
+      if(!prev||items[i].lmtMs>prev.lmtMs) prev=items[i];
+      if(items[i].name==='立春'){ if(!lichun||items[i].lmtMs>lichun.lmtMs) lichun=items[i]; }
+    }
+  }
+  if(!prev||!lichun) return {error:'找不到出生地地方平時的節或立春'};
+  var yearGZ=gzYear(lichun.solar.getYear());
+  var monthGZ=monthGanZhi(yearGZ, prev.zhi);
+  var note='節氣時刻已換算為出生地地方平時（世界時＋經度×4分鐘；lunar-javascript 交節印記為東八區，世界時＝印記−8小時）。上一節 '+prev.name+' 的地方平時為 '+lmtStamp(prev.lmtMs)+'（東八區印記 '+lmtStamp(prev.cstMs)+'）。';
+  if(solar.getYear()<1929||lichun.solar.getYear()<1929){
+    note+=' 1929 年以前中國民用時為北平地方時（約 UTC+7:46），庫仍以東八區印出，換算可能與當時鐘點差約 14 分鐘。';
+  }
+  return {year:yearGZ, month:monthGZ, jie:prev.name, zhi:prev.zhi, lichun:lichun, prev:prev, note:note, source:'lmt'};
+}
+
+root.HeluoLocalLunar={localLunar:localLunar, lunarText:lunarText, forHeluo:forHeluo, chinaOf:chinaOf, dayNum:dayNum, gzYear:gzYear,
+  civilMs:civilMs, jieqiLmtMs:jieqiLmtMs, compareKey:compareKey, hasLon:hasLon, lmtStamp:lmtStamp, yearMonth:yearMonth, monthGanZhi:monthGanZhi};
 if(typeof module!=='undefined') module.exports=root.HeluoLocalLunar;
 })(typeof window!=='undefined'?window:global);

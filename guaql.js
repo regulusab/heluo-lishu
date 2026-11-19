@@ -35,8 +35,13 @@ SRC.guaqi=SRC.guaqiDayan;
 
 function jieName(k){ return KEY_NAME[k]||k; }
 
-function jieqiList(lib, year){
-  var acc=[], seen={}, ys=[year-1,year,year+1], yi, jq, k, s, id, name;
+function birthKey(solar, lon){
+  var LL=root.HeluoLocalLunar;
+  if(LL&&LL.hasLon(lon)) return LL.civilMs(solar)/864e5;
+  return solar.getJulianDay();
+}
+function jieqiList(lib, year, lon){
+  var acc=[], seen={}, ys=[year-1,year,year+1], yi, jq, k, s, id, name, key, LL=root.HeluoLocalLunar;
   for(yi=0;yi<ys.length;yi++){
     jq=lib.Solar.fromYmd(ys[yi],6,15).getLunar().getJieQiTable();
     for(k in jq){
@@ -47,7 +52,8 @@ function jieqiList(lib, year){
       name=jieName(k);
       if(JIEQI_24.indexOf(name)<0) continue;
       seen[id]=true;
-      acc.push({name:name, solar:s, jd:s.getJulianDay()});
+      key=(LL&&LL.hasLon(lon))? (LL.jieqiLmtMs(s, lon)/864e5) : s.getJulianDay();
+      acc.push({name:name, solar:s, jd:key});
     }
   }
   acc.sort(function(a,b){ return a.jd-b.jd; });
@@ -73,9 +79,9 @@ function nextNamed(list, jd, names){
   return best;
 }
 
-function jieMonth(lib, solar){
-  var list=jieqiList(lib, solar.getYear());
-  var jd=solar.getJulianDay();
+function jieMonth(lib, solar, lon){
+  var list=jieqiList(lib, solar.getYear(), lon);
+  var jd=birthKey(solar, lon);
   var prev=prevNamed(list, jd, MONTH_JIE);
   var next=nextNamed(list, jd, MONTH_JIE);
   if(!prev) return {error:'找不到上一節'};
@@ -83,9 +89,9 @@ function jieMonth(lib, solar){
 }
 
 /* 直取四方伯；土王則在四立前十八日改取坤艮。丑辰（立春前、立夏前）取艮，未戌（立秋前、立冬前）取坤，據 App 說明。 */
-function huagongAt(lib, solar, method){
-  var list=jieqiList(lib, solar.getYear());
-  var jd=solar.getJulianDay();
+function huagongAt(lib, solar, method, lon){
+  var list=jieqiList(lib, solar.getYear(), lon);
+  var jd=birthKey(solar, lon);
   var dz=prevNamed(list, jd, ['冬至']), cf=prevNamed(list, jd, ['春分']);
   var xz=prevNamed(list, jd, ['夏至']), qf=prevNamed(list, jd, ['秋分']);
   var cardinal='兌';
@@ -112,9 +118,9 @@ function huagongAt(lib, solar, method){
   return base;
 }
 
-function sifangAt(lib, solar){
-  var list=jieqiList(lib, solar.getYear());
-  var jd=solar.getJulianDay();
+function sifangAt(lib, solar, lon){
+  var list=jieqiList(lib, solar.getYear(), lon);
+  var jd=birthKey(solar, lon);
   var jie=prevNamed(list, jd, JIEQI_24);
   if(!jie) return null;
   var i,j,g;
@@ -125,14 +131,14 @@ function sifangAt(lib, solar){
   return {jie:jie.name};
 }
 
-function guaQiAt(lib, solar, method){
-  var list=jieqiList(lib, solar.getYear());
-  var jd=solar.getJulianDay();
+function guaQiAt(lib, solar, method, lon){
+  var list=jieqiList(lib, solar.getYear(), lon);
+  var jd=birthKey(solar, lon);
   var dz=prevNamed(list, jd, ['冬至']);
   var dzNext=nextNamed(list, jd, ['冬至']);
   if(!dz) return {error:'找不到冬至'};
   var unit=6+7/80;
-  var sifang=sifangAt(lib, solar);
+  var sifang=sifangAt(lib, solar, lon);
   method=method||'dayan';
   if(method==='jingfang'){
     var segs=[], t=dz.jd, i,g,short,seg=null, FEN=1/80;
@@ -195,7 +201,7 @@ function riGuaDayPos(block, dayIn, method){
   if(!cands.length) return dayIn%6;
   return cands[Math.floor(dayIn/2)%cands.length];
 }
-function riGuaAt(H, R, lib, solar, method){
+function riGuaAt(H, R, lib, solar, method, lon){
   var year=solar.getYear(), Y=null, i,j,d;
   method=method||'tian5';
   if(!R||!R.dayun) return {error:'無大運資料，無法起日卦'};
@@ -204,12 +210,12 @@ function riGuaAt(H, R, lib, solar, method){
     for(j=0;j<d.years.length;j++) if(d.years[j].year===year) Y=d.years[j];
   }
   if(!Y) return {error:'此日不在大運流年範圍內，未排日卦', src:SRC.rigua};
-  var sm=jieMonth(lib, solar);
+  var sm=jieMonth(lib, solar, lon);
   if(sm.error) return {error:sm.error, src:SRC.rigua};
   var months=H.liuyue(Y.bits, Y.changed);
   var M=months[sm.index];
   var built=method==='di6'?riGuaDi6(H,M):riGuaTian5(H,M);
-  var days=Math.floor(solar.getJulianDay()-sm.start.jd);
+  var days=Math.floor(birthKey(solar, lon)-sm.start.jd);
   var out={
     method:built.method, year:year, yearBits:Y.bits, yearPos:Y.changed,
     monthJie:sm.name, month:sm.month, monthBits:M.bits, monthPos:M.changed,
@@ -230,8 +236,8 @@ function riGuaAt(H, R, lib, solar, method){
   return out;
 }
 
-root.HeluoGuaQi={SRC:SRC, GUAQI_60:GUAQI_60, MONTH_JIE:MONTH_JIE, jieqiList:jieqiList,
+root.HeluoGuaQi={SRC:SRC, GUAQI_60:GUAQI_60, MONTH_JIE:MONTH_JIE, JIEQI_24:JIEQI_24, jieqiList:jieqiList,
   jieMonth:jieMonth, huagongAt:huagongAt, sifangAt:sifangAt, guaQiAt:guaQiAt, riGuaAt:riGuaAt,
-  prevNamed:prevNamed, nextNamed:nextNamed};
+  prevNamed:prevNamed, nextNamed:nextNamed, birthKey:birthKey};
 if(typeof module!=='undefined') module.exports=root.HeluoGuaQi;
 })(typeof window!=='undefined'?window:global);

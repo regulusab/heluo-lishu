@@ -13,6 +13,7 @@ require(join(root,'guaql.js'));
 const C = require(join(root,'calc.js'));
 const P = global.HeluoPlace;
 const Q = global.HeluoGuaQi;
+const LL = global.HeluoLocalLunar;
 const S = global.Heluo.SCHOOLS;
 
 const expect = {
@@ -175,6 +176,31 @@ ok('中州 虛歲仍以立春年柱，不受出生地春節影響', C.compute({y
 
 const taipeiSame=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {lon:121.57});
 ok('Taipei mid-month matches no-lon snapshot', row(taipeiSame)===expect['site-default|guben'] || (taipeiSame.pillars.join(' ')==='庚午 壬午 辛亥 壬辰' && taipeiSame.xian.bits==='111100' && taipeiSame.xian.pos===4 && taipeiSame.hou.bits==='110111' && taipeiSame.hou.pos===1 && taipeiSame.firstYear===1990));
+
+// 節氣 UT：2024 立春庫印 16:27:07 東八區＝08:27:07 UT（紫金山／新華網 16:27 北京時間）
+const lichun24=lib.Solar.fromYmd(2024,2,4).getLunar().getJieQiTable()['立春'];
+ok('2024 立春 東八區印記 16:27', lichun24.getDay()===4 && lichun24.getHour()===16 && lichun24.getMinute()===27);
+const ut24=LL.civilMs(lichun24)-8*3600*1000;
+ok('2024 立春 UT 08:27', new Date(ut24).toISOString().startsWith('2024-02-04T08:27:'));
+const xia24=lib.Solar.fromYmd(2024,6,21).getLunar().getJieQiTable()['夏至'];
+ok('2024 夏至 東八區 04:51（HKO／年曆）', xia24.getMonth()===6 && xia24.getDay()===21 && xia24.getHour()===4 && xia24.getMinute()===51);
+ok('lon 120° year/month matches 東八區 EightChar at 立春 instant', LL.yearMonth(lib, lib.Solar.fromYmdHms(1990,2,4,10,14,0), 120).year==='庚午' && LL.yearMonth(lib, lib.Solar.fromYmdHms(1990,2,4,10,13,0), 120).year==='己巳');
+
+// 1990-02-04 立春 10:14 東八區；臺北 LMT 約 10:20。10:16 在東八區已交節、在臺北地方平時尚未交節。
+const tpBefore=C.compute({y:1990,m:2,d:4,h:10,mi:16,male:true}, S.guben, {lon:121.57});
+const tpAfter=C.compute({y:1990,m:2,d:4,h:10,mi:21,male:true}, S.guben, {lon:121.57});
+const tpCst=C.compute({y:1990,m:2,d:4,h:10,mi:16,male:true}, S.guben, {});
+ok('Taipei 10:16 LMT still 己巳 丁丑 (before local 立春)', tpBefore.pillars.join(' ')==='己巳 丁丑 庚子 辛巳');
+ok('Taipei 10:21 LMT already 庚午 戊寅', tpAfter.pillars[0]==='庚午' && tpAfter.pillars[1]==='戊寅');
+ok('same 10:16 without lon already 庚午 戊寅 (東八區 10:14 已交節)', tpCst.pillars.join(' ')==='庚午 戊寅 庚子 辛巳');
+ok('中州 虛歲年隨 LMT 立春', C.compute({y:1990,m:2,d:4,h:10,mi:16,male:true}, S.zhong, {lon:121.57}).firstYear===1989 && C.compute({y:1990,m:2,d:4,h:10,mi:21,male:true}, S.zhong, {lon:121.57}).firstYear===1990);
+
+// 西經 122.68，寒露地方平時約 2026-10-07 22:18。22:10 尚未交節，但 70°E +1 日到 10-08 22:10 已過寒露，年月柱隨之。
+const westNear=C.compute({y:2026,m:10,d:7,h:22,mi:10,male:true}, S.guben, {lon:-122.68});
+const eastSame=C.compute({y:2026,m:10,d:7,h:22,mi:10,male:true}, S.guben, {lon:80});
+ok('west-of-70 near 節: +1 day crosses 寒露, month becomes 戊戌', westNear.dayLine.applied && westNear.pillars.join(' ')==='丙午 戊戌 乙卯 丁亥');
+ok('same LMT east of 70 keeps 丁酉 (not yet 寒露)', !eastSame.dayLine.applied && eastSame.pillars.join(' ')==='丙午 丁酉 甲寅 乙亥');
+ok('west-of-70 22:10 lunar not shifted by +1', westNear.lunarInfo && westNear.lunarInfo.source==='local');
 
 console.log(fail===0?('\nAll '+n+' tests passed.'):('\n'+fail+'/'+n+' failed.'));
 process.exit(fail?1:0);

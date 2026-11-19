@@ -24,6 +24,7 @@ function model(){
   if(st.place||st.lon||st.tz) out.push({p:'出生地／經緯度／時區：'+(st.place||'')+' '+(st.lon!=null&&st.lon!==''?('經度 '+st.lon+'°'):'')+' '+(st.lat!=null&&st.lat!==''?('緯度 '+st.lat+'°'):'')+' '+(st.tz||'')});
   if(R.dayLine&&R.dayLine.applied) out.push({p:'東經70°以西：只有干支加一天（日柱及由新日干依五鼠遁重排時柱；若跨節，年月柱隨之）。農曆日以出生地合朔重算，不用加一天後的日期。'});
   if(R.lunarInfo&&R.lunarInfo.note) out.push({p:R.lunarInfo.note});
+  if(R.jieqiNote) out.push({p:R.jieqiNote+(R.jieqiPrev?(' 上一節／氣：'+R.jieqiPrev):'')});
   var ytL=st.yt==='shun'?'寄爻順起':'寄爻初起';
   var rgL=st.rg==='di6'?'地六天五':'天五地六';
   var gqL=st.gq==='jingfang'?'京房古法':'大衍新法';

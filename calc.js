@@ -14,11 +14,21 @@ function compute(inp, school, opts){
   var solarClock=lib.Solar.fromYmdHms(clockY,clockM,clockD,clockH,clockMi,0);
   var clockText=clockStamp(clockY,clockM,clockD,clockH,clockMi);
   var shift=(root.HeluoPlace?HeluoPlace.dayLineShift(opts.lon):{applied:false,days:0});
-  // 東經70°以西：只把干支用的陽曆日加一天（日柱＋五鼠遁重排時柱；跨節則年月柱隨之）。農曆、節氣、二至、化工、卦氣、日卦皆用未加一天的輸入（地方平時）。
+  // 先以未加一天的地方平時＋出生地地方平時節氣排干支，再套東經70°以西只加干支一天（日柱＋五鼠遁重排時柱；若加一天後跨節，年月柱隨之）。
+  // 農曆、節氣、二至、化工、卦氣、日卦皆用未加一天的輸入（地方平時）。
+  function eightChar(solar){
+    var e=solar.getLunar().getEightChar(); e.setSect(opts.ziSect||2); // 2：0:00 才換日；1：23:00 即換日
+    var yG=e.getYear(), mG=e.getMonth(), ym=null;
+    if(root.HeluoLocalLunar&&HeluoLocalLunar.hasLon(opts.lon)){
+      ym=HeluoLocalLunar.yearMonth(lib, solar, opts.lon);
+      if(ym&&!ym.error){ yG=ym.year; mG=ym.month; }
+    }
+    return {yG:yG, mG:mG, dG:e.getDay(), hG:e.getTime(), ym:ym};
+  }
+  var gzClock=eightChar(solarClock);
   var solarGz=shift.days?solarClock.next(shift.days):solarClock;
-  var lunarGz=solarGz.getLunar();
-  var ec=lunarGz.getEightChar(); ec.setSect(opts.ziSect||2); // 2：0:00 才換日（23:00–24:00 仍屬當日，晚子時）；1：23:00 即換日（傳統早子時）
-  var yG=ec.getYear(), mG=ec.getMonth(), dG=ec.getDay(), hG=ec.getTime();
+  var gz=shift.days?eightChar(solarGz):gzClock;
+  var yG=gz.yG, mG=gz.mG, dG=gz.dG, hG=gz.hG;
   var y=solarClock.getYear(), m=solarClock.getMonth(), d=solarClock.getDay(), h=solarClock.getHour(), mi=solarClock.getMinute();
   var lunarClock=solarClock.getLunar();
   var clockYmd=clockStamp(clockY,clockM,clockD,0,0).slice(0,10);
@@ -29,12 +39,17 @@ function compute(inp, school, opts){
       fallback:true, source:'china', note:'未填經度，農曆依東八區／中國農曆。'};
   }
   var yearNum=ganzhiYearStart(yG, clockY);
-  // 二至、節氣：用未移位的出生地方平時，對 lunar-javascript 節氣時刻（庫內為東八區）
+  // 二至、節氣：未移位的出生地方平時，對出生地地方平時節氣（未填經度則仍用東八區印記，與舊版相同）
   var jq=lunarClock.getJieQiTable(), sNum=ymdNum(solarClock)*10000+h*100+mi;
   function t(name){ var s=jq[name]; return ymdNum(s)*10000+s.getHour()*100+s.getMinute(); }
   var dz= t('DONG_ZHI'), xz=t('夏至'), dzPrev=t('冬至');
   // lunar-javascript：'冬至'為前一年冬至、'DONG_ZHI'為本年末冬至
   var winterHalf = (sNum>=dzPrev && sNum<xz) || sNum>=dz;
+  if(root.HeluoGuaQi&&root.HeluoLocalLunar&&HeluoLocalLunar.hasLon(opts.lon)){
+    var listWH=HeluoGuaQi.jieqiList(lib, clockY, opts.lon), bk=HeluoGuaQi.birthKey(solarClock, opts.lon);
+    var dzL=HeluoGuaQi.prevNamed(listWH, bk, ['冬至']), xzL=HeluoGuaQi.prevNamed(listWH, bk, ['夏至']);
+    winterHalf = !!(dzL && (!xzL||dzL.jd>=xzL.jd));
+  }
   var lunarMonth=loc.month;
   var mz=mG.charAt(1), mzIdx=H.ZHI.indexOf(mz);
   var yangMonth = school.monthBasis==='lunar' ? (lunarMonth%2===1) : (mzIdx%2===0);
@@ -51,24 +66,40 @@ function compute(inp, school, opts){
   if(shift.applied){
     R.solarText=clockText+'；東經70°以西，只有干支加一天（日柱及由新日干依五鼠遁重排時柱；若跨節，年月柱隨之），農曆日以出生地合朔重算，不用加一天後的日期。';
   }
+  if(root.HeluoLocalLunar&&HeluoLocalLunar.hasLon(opts.lon)){
+    R.jieqiNote=(gzClock.ym&&gzClock.ym.note)||'節氣時刻已換算為出生地地方平時（世界時＋經度×4分鐘）。';
+  } else {
+    R.jieqiNote='未填經度，節氣依東八區交節印記（與舊版相同）。';
+  }
   R.dayLine=shift;
-  R.jieqiPrev=lunarClock.getPrevJieQi(true).getName(); R.yangMonth=yangMonth; R.winterHalf=winterHalf;
-  // 化工（月令）：預設直取四方伯，公式與舊版相同，用未移位的出生日時
+  R.jieqiPrev=lunarClock.getPrevJieQi(true).getName();
+  R.jieqiInfo=gzClock.ym||null;
+  if(root.HeluoGuaQi){
+    var prevAny=HeluoGuaQi.prevNamed(HeluoGuaQi.jieqiList(lib, clockY, opts.lon), HeluoGuaQi.birthKey(solarClock, opts.lon), HeluoGuaQi.JIEQI_24);
+    if(prevAny) R.jieqiPrev=prevAny.name;
+  }
+  R.yangMonth=yangMonth; R.winterHalf=winterHalf;
+  // 化工（月令）：預設直取四方伯；有經度時二分二至用出生地地方平時
   var cf=t('春分'), qf=t('秋分');
   var hgT = (sNum>=dzPrev && sNum<cf)||sNum>=dz ? '坎' : sNum<xz ? '震' : sNum<qf ? '離' : '兌';
   var hgMethod=opts.huagong||'cardinal';
   var hgInfo={method:hgMethod, cardinal:hgT, trigram:hgT, inTuwang:false, note:'直取四方伯（二分二至：坎震離兌）。'};
-  if(hgMethod==='tuwang' && root.HeluoGuaQi){
-    hgInfo=HeluoGuaQi.huagongAt(lib, solarClock, 'tuwang');
-    if(!hgInfo.inTuwang) hgInfo.trigram=hgT;
+  if(root.HeluoGuaQi){
+    var hgL=HeluoGuaQi.huagongAt(lib, solarClock, hgMethod, opts.lon);
+    if(hgMethod==='tuwang'){
+      hgInfo=hgL;
+      if(!hgInfo.inTuwang) hgInfo.trigram=hgL.cardinal;
+    } else if(root.HeluoLocalLunar&&HeluoLocalLunar.hasLon(opts.lon)){
+      hgT=hgL.cardinal; hgInfo.trigram=hgT; hgInfo.cardinal=hgT;
+    }
   }
   R.huagong=hgInfo.trigram; R.huagongInfo=hgInfo; R.tianyuan=H.NAJIA[yG[0]];
   R.precision=opts.precision||'exact';
   R.precWarnings=[]; // 精度只作記錄，誤差由使用者自行吸收，不另警示
   R.place=opts.place||''; R.lon=opts.lon; R.lat=opts.lat; R.tz=opts.tz||'';
   if(root.HeluoGuaQi){
-    R.guaQi=HeluoGuaQi.guaQiAt(lib, solarClock, opts.guaqi||'dayan');
-    R.riGua=HeluoGuaQi.riGuaAt(H, R, lib, solarClock, opts.rigua||'tian5');
+    R.guaQi=HeluoGuaQi.guaQiAt(lib, solarClock, opts.guaqi||'dayan', opts.lon);
+    R.riGua=HeluoGuaQi.riGuaAt(H, R, lib, solarClock, opts.rigua||'tian5', opts.lon);
   }
   return R;
 }
