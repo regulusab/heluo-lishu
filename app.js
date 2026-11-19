@@ -37,14 +37,23 @@ var mode='auto';
 function getPillars(){ return [0,1,2,3].map(function(i){ return $('pg'+i).value+$('pz'+i).value; }); }
 function settings(){
   return {mode:mode, date:$('date').value, time:$('time').value, zi:$('zi').value, sex:$('sex').value, pol:$('pol').value,
-    school:cur, pillars:getPillars(), byear:$('byear').value, winter:$('winter').value, startAge:+$('startAge').value||1, focus:$('focus').value.trim()};
+    school:cur, pillars:getPillars(), byear:$('byear').value, winter:$('winter').value, startAge:+$('startAge').value||1, focus:$('focus').value.trim(),
+    prec:$('prec').value, place:$('place').value, lon:$('lon').value, lat:$('lat').value, tz:$('tz').value, hg:$('hg').value};
 }
 function applySettings(o){ if(!o) return;
-  ['date','time','zi','sex','pol','winter','startAge','focus'].forEach(function(k){ if(o[k]!=null&&o[k]!=='') $(k).value=o[k]; });
+  ['date','time','zi','sex','pol','winter','startAge','focus','prec','place','lon','lat','tz','hg'].forEach(function(k){ if(o[k]!=null&&o[k]!=='') $(k).value=o[k]; });
   if(o.focus==='') $('focus').value='';
   if(o.school&&S[o.school]) cur=o.school;
   if(o.pillars&&o.pillars.length===4) setPillars(o.pillars);
   if(o.byear){ fillYears(); $('byear').value=o.byear; }
+  if(o.place && window.HeluoPlace){
+    var pl=HeluoPlace.findPlace(o.place);
+    if(pl&&pl.id&&pl.id!=='custom'){
+      if((o.lon==null||o.lon==='')&&pl.lon!=='') $('lon').value=pl.lon;
+      if((o.lat==null||o.lat==='')&&pl.lat!=='') $('lat').value=pl.lat;
+      if(!o.tz&&pl.tz) $('tz').value=pl.tz;
+    }
+  }
   setMode(o.mode||'auto'); schoolsUI();
 }
 function setPillars(pl){ pl.forEach(function(p,i){ if(p&&p.length===2){ $('pg'+i).value=p[0]; $('pz'+i).value=p[1]; } }); $('pillarTxt').value=pl.join(' '); fillYears(); }
@@ -53,7 +62,12 @@ function fillYears(){ var gz=$('pg0').value+$('pz0').value, prev=$('byear').valu
   if(ys.indexOf(+prev)>=0) $('byear').value=prev; else { var now=new Date().getFullYear(), best=ys.filter(function(y){return y<=now;}).pop(); if(best) $('byear').value=best; } }
 function setMode(m){ mode=m; $('autoBox').style.display=m==='auto'?'flex':'none'; $('manBox').style.display=m==='manual'?'block':'none';
   Array.prototype.forEach.call(document.querySelectorAll('#modeSw button'),function(b){ b.className=b.dataset.mode===m?'on':''; }); }
-function opts(){ return {polarity:$('pol').value, ziSect:+$('zi').value, startAge:+$('startAge').value||1}; }
+function opts(){
+  var lon=window.HeluoPlace?HeluoPlace.parseLon($('lon').value):null;
+  var lat=window.HeluoPlace?HeluoPlace.parseLon($('lat').value):null;
+  return {polarity:$('pol').value, ziSect:+$('zi').value, startAge:+$('startAge').value||1,
+    precision:$('prec').value||'exact', place:$('place').value||'', lon:lon, lat:lat, tz:$('tz').value||'', huagong:$('hg').value||'cardinal'};
+}
 function calcFor(sc){ var st=settings();
   if(st.mode==='manual') return C.computeManual({pillars:st.pillars, male:st.sex==='1', birthYear:+st.byear, winter:st.winter, startAge:st.startAge}, S[sc], opts());
   var d=st.date.split('-'), t=st.time.split(':');
@@ -67,12 +81,17 @@ function render(){
   var out='';
   // 四柱
   out+='<section class="card"><h2>一、四柱與天地數</h2><div class="grid"><div><div class="pillars">'+['年','月','日','時'].map(function(n,i){return '<div>'+n+'柱<b>'+R.pillars[i]+'</b></div>';}).join('')+'</div>'
-   +'<p>西曆 '+R.solarText+'<br>農曆 '+R.lunarText+'<br>'+(R.yangYear?'陽':'陰')+'年生'+(inp.male?'男':'女')+'・'+(R.shun?'天數卦在上':'地數卦在上')+'（'+(R.yangP?'陽':'陰')+(inp.male?'男':'女')+'，依'+(opts().polarity==='hour'?'時干':'年干')+'）・'+R.yuan+'</p></div>';
+   +'<p>西曆 '+(R.clockText&&R.dayLine&&R.dayLine.applied?esc(R.clockText)+'（鐘錶）<br>'+esc(R.solarText):esc(R.solarText))+'<br>農曆 '+R.lunarText+'<br>'+(R.yangYear?'陽':'陰')+'年生'+(inp.male?'男':'女')+'・'+(R.shun?'天數卦在上':'地數卦在上')+'（'+(R.yangP?'陽':'陰')+(inp.male?'男':'女')+'，依'+(opts().polarity==='hour'?'時干':'年干')+'）・'+R.yuan+(R.precision&&R.precision!=='exact'?'　時間精度：'+(window.HeluoPlace&&HeluoPlace.PREC_LABEL[R.precision]||R.precision):'')+(R.place||R.lon!=null?'　出生地：'+esc(placeLabel(R)):'')+'</p>'
+   +(R.precWarnings&&R.precWarnings.length?'<div class="warn"><b>時間精度提醒</b><ul>'+R.precWarnings.map(function(w){return '<li>'+esc(w)+'</li>';}).join('')+'</ul></div>':'')
+   +(R.dayLine&&R.dayLine.applied?'<div class="warn">出生地經度 '+R.dayLine.lon+'°（東經70°以西），日柱依老師裁定加一天。用鐘錶時，不做真太陽時校正。</div>':'')+'</div>';
   out+='<div><table><tr><th>字</th>'+R.detail.map(function(d){return '<td>'+d.ch+'</td>';}).join('')+'</tr><tr><th>數</th>'+R.detail.map(function(d){return '<td>'+d.nums.join('、')+'</td>';}).join('')+'</tr></table>'
    +'<p>天數（奇）<b>'+R.tian+'</b>：'+R.tr.steps.join(' ')+' → 取 <b>'+R.tr.value+'</b> → '+R.tT.t+(R.tT.ji?'（五寄宮）':'')+'<br>地數（偶）<b>'+R.di+'</b>：'+R.dr.steps.join(' ')+' → 取 <b>'+R.dr.value+'</b> → '+R.dT.t+(R.dT.ji?'（五寄宮）':'')+'</p>'
    +'<div class="sub">天數過 25 減 25、地數過 30 減 30；餘數取個位，整十取十位。推命術言「減去 25 的倍數」，若恰為 25／50 之類，本站取 5 寄宮（各派皆同）。</div></div></div>';
   var tq=(cur==='cui')? strength(R):'';
-  out+=tq+'<p>天元氣（年干納甲）：<span class="pill">'+R.tianyuan+'</span>　化工（月令）：<span class="pill">'+(R.huagong||'手動模式無節氣日，未計')+'</span>　'+(has(R,R.tianyuan)?'先後天卦中得天元氣 ✔':'')+' '+(has(R,R.huagong)?'得化工 ✔':'')+'<span class="sub">（化工依二分二至取坎震離兌；四季月土旺十八日之坤艮說各本不一，未採）</span></p></section>';
+  var hgI=R.huagongInfo||{}, hgName=R.huagong|| (hgI.alt?hgI.alt.join('／'): (R.manual?'手動模式無節氣日，未計':''));
+  var hgGot=R.huagong?has(R,R.huagong):(hgI.alt&&(has(R,'坤')||has(R,'艮')));
+  out+=tq+'<p>天元氣（年干納甲）：<span class="pill">'+R.tianyuan+'</span>　化工（月令）：<span class="pill">'+esc(hgName||'—')+'</span>　'+(has(R,R.tianyuan)?'先後天卦中得天元氣 ✔':'')+' '+(hgGot?(R.huagong?'得化工 ✔':'得化工（坤或艮，歸屬來源待核） ✔'):'')+'</p>';
+  out+='<p class="cite">'+esc((hgI.note||'直取四方伯（二分二至：坎震離兌）。'))+(hgI.src?' 來源：'+hgI.src:'')+'</p></section>';
   // 卦
   out+='<section class="card"><h2>二、先天卦・後天卦（'+S[cur].name+'）</h2><div class="grid">'+guaCard('先天卦',R.xian.bits,R.xian.pos,R.xian.note)+guaCard('後天卦',R.hou.bits,R.hou.pos,R.hou.note)+'</div>';
   // differences
@@ -91,13 +110,45 @@ function render(){
   out+='</table><p class="sub">'+(D.yang?'陽爻管九年：起運年'+(D.firstYang?'為陽年，首年用本卦不變，次年變應爻，三年還變運爻，其後逐年上變。':'為陰年，首年即變運爻，次年變應爻，三年復變運爻，其後逐年上變。'):'陰爻管六年：首年變運爻，其後逐年上變。')+'各家皆同。</p>';
   var Y=D.years[state.yr], M=H.liuyue(Y.bits,Y.changed);
   out+='<h3>流月：'+Y.year+'年（'+Y.gz+'）'+hx(Y.bits).name+'</h3><div class="months">'+M.map(function(m,i){return '<div>'+(i+1)+'月<br><b>'+hx(m.bits).name+'</b><br><span class="sub">'+yaoName(m.bits,m.changed)+'</span></div>';}).join('')+'</div><p class="sub">正月變流年元堂上一爻，三、五…十一月逐爻上變；雙月取前一單月變爻之應爻（依推命術例）。月份依節氣月。</p></section>';
+  out+=renderGuaQi(R);
   out+=texts(R.xian.bits,R.xian.pos,'先天卦批文')+texts(R.hou.bits,R.hou.pos,'後天卦批文');
   out+=texts(D.bits,D.pos,'本大運')+texts(Y.bits,Y.changed,Y.year+'流年');
   $('out').innerHTML=out; window.LAST={R:R,D:D,Y:Y,M:M,school:S[cur],settings:settings(),all:all};
   Array.prototype.forEach.call(document.querySelectorAll('[data-dy]'),function(tr){tr.onclick=function(){state.dy=+tr.dataset.dy;state.yr=null;render();};});
   Array.prototype.forEach.call(document.querySelectorAll('[data-yr]'),function(tr){tr.onclick=function(){state.yr=+tr.dataset.yr;render();};});
 }
-function has(R,t){ return [H.upper(R.xian.bits),H.lower(R.xian.bits),H.upper(R.hou.bits),H.lower(R.hou.bits)].indexOf(t)>=0; }
+function has(R,t){ return t && [H.upper(R.xian.bits),H.lower(R.xian.bits),H.upper(R.hou.bits),H.lower(R.hou.bits)].indexOf(t)>=0; }
+function placeLabel(R){
+  var id=R.place, p=window.HeluoPlace&&HeluoPlace.findPlace(id);
+  var name=(p&&p.name&&p.id)?p.name:'';
+  var lon=R.lon, lat=R.lat, tz=R.tz;
+  var bits=[];
+  if(name && name!=='（未填）' && name!=='自訂') bits.push(name);
+  if(lon!=null&&lon!=='') bits.push('經度 '+lon+'°');
+  if(lat!=null&&lat!=='') bits.push('緯度 '+lat+'°');
+  if(tz) bits.push(tz);
+  return bits.join('，')||'（未填）';
+}
+function jdYmd(jd){
+  if(jd==null||!window.Solar) return '';
+  try{ var s=Solar.fromJulianDay?Solar.fromJulianDay(jd):null; if(s&&s.toYmdHms) return s.toYmdHms(); }catch(e){}
+  return '';
+}
+function renderGuaQi(R){
+  if(R.manual) return '<section class="card"><h2>四、節候卦氣・日卦</h2><p class="sub">手動模式無西曆日時，未排卦氣與日卦。</p></section>';
+  var Q=window.HeluoGuaQi, s='<section class="card"><h2>四、節候卦氣・日卦</h2>';
+  var g=R.guaQi, r=R.riGua;
+  if(g&&!g.error){
+    var sf=g.sifang||{};
+    s+='<p>節候正卦：<span class="pill">'+(sf.gua||'—')+(sf.yao?sf.yao:'')+'</span>　值節：'+(sf.jie||'—')+'　六十卦卦氣：<span class="pill">'+(g.gua||'—')+'</span>（第 '+(g.index+1)+'／60，自冬至中孚起六日七分）</p>';
+    s+='<p class="cite">'+esc(g.note||'')+' 來源：'+esc((g.src||(Q&&Q.SRC.guaqi)||''))+' 不採用「大衍新法」（來源待核）。</p>';
+  } else s+='<p class="sub">卦氣：'+esc((g&&g.error)||'未排')+'</p>';
+  if(r&&!r.error&&r.bits){
+    s+='<p>日卦：<span class="pill">'+hx(r.bits).full+'</span>　日爻：<b>'+yaoName(r.bits,r.pos)+'</b>　本月節：'+esc(r.monthJie)+'（第 '+r.month+' 節氣月）　距節 '+r.daysFromJie+' 日　流月卦 '+hx(r.monthBits).name+' '+yaoName(r.monthBits,r.monthPos)+'</p>';
+    s+='<p class="cite">'+esc(r.note||'')+' 來源：'+esc((r.src||(Q&&Q.SRC.rigua)||''))+'</p>';
+  } else s+='<p class="sub">日卦：'+esc((r&&(r.error||r.note))||'未排')+(r&&r.src?' <span class="cite">來源：'+esc(r.src)+'</span>':'')+'</p>';
+  return s+'</section>';
+}
 function strength(R){
   function c(n,b){ return n<b?'不足':n===b?'得中':(n<b+15?'有餘':'太過'); }
   return '<div class="warn"><b>崔講義・天地數強弱（簡示）</b>：天數 '+R.tian+'（標準 25）'+c(R.tian,25)+'；地數 '+R.di+'（標準 30）'+c(R.di,30)+'。講義另依節令細分「至弱、孤陽、孤陰」等，手稿 OCR 難辨，未逐條實作。</div>';
@@ -114,7 +165,7 @@ function focusYear(R){ var f=$('focus').value.trim(); if(!f) return null; if(/^\
 (function(){ var h=''; ['年','月','日','時'].forEach(function(n,i){ h+='<label>'+n+'柱<span style="display:flex;gap:2px"><select id="pg'+i+'">'+H.GAN.split('').map(function(g){return '<option>'+g+'</option>';}).join('')+'</select><select id="pz'+i+'">'+H.ZHI.split('').map(function(z){return '<option>'+z+'</option>';}).join('')+'</select></span></label>'; });
   $('pillarSel').innerHTML=h; setPillars(['癸巳','甲子','丁酉','甲辰']); })();
 function rerun(){ state.dy=null; state.yr=null; render(); }
-['date','time','sex','pol','zi','winter','byear','startAge','focus'].forEach(function(id){ $(id).onchange=rerun; });
+['date','time','sex','pol','zi','winter','byear','startAge','focus','prec','place','lon','lat','tz','hg'].forEach(function(id){ $(id).onchange=rerun; });
 [0,1,2,3].forEach(function(i){ $('pg'+i).onchange=$('pz'+i).onchange=function(){ $('pillarTxt').value=getPillars().join(' '); if(i===0) fillYears(); rerun(); }; });
 $('pillarTxt').onchange=function(){ var t=$('pillarTxt').value.replace(/[年月日時柱,，、\s]+/g,''); if(t.length!==8){ $('manWarn').innerHTML='<div class="warn err">請輸入八個字（四柱干支），例：癸巳甲子丁酉甲辰</div>'; return; }
   var pl=[t.slice(0,2),t.slice(2,4),t.slice(4,6),t.slice(6,8)], bad=pl.filter(function(p){return H.GAN.indexOf(p[0])<0||H.ZHI.indexOf(p[1])<0;});
@@ -122,6 +173,24 @@ $('pillarTxt').onchange=function(){ var t=$('pillarTxt').value.replace(/[年月�
 Array.prototype.forEach.call(document.querySelectorAll('#modeSw button'),function(b){ b.onclick=function(){ setMode(b.dataset.mode); rerun(); }; });
 $('go').onclick=rerun;
 window.HeluoApp={settings:settings, applySettings:function(o){ applySettings(o); rerun(); }, rerun:rerun, setMode:setMode};
+(function initPlace(){
+  var P=window.HeluoPlace; if(!P) return;
+  $('place').innerHTML=P.PLACES.map(function(x){ return '<option value="'+x.id+'">'+x.name+'</option>'; }).join('');
+  $('tz').innerHTML='<option value="">（未填）</option>'+P.tzOptions().map(function(x){ return '<option value="'+esc(x.id)+'">'+esc(x.label)+'</option>'; }).join('');
+  $('place').addEventListener('change', function(){
+    var pl=P.findPlace($('place').value);
+    if(pl && pl.id && pl.id!=='custom'){ if(pl.lon!=='') $('lon').value=pl.lon; if(pl.lat!=='') $('lat').value=pl.lat; if(pl.tz) $('tz').value=pl.tz; }
+  });
+  $('tzFromLon').onclick=function(){
+    var est=P.tzFromLon($('lon').value);
+    if(!est){ $('msg').textContent='請先填寫經度，再估算時區。'; return; }
+    var opt=$('tz').querySelector('option[value="'+est.id+'"]');
+    if(!opt){ opt=document.createElement('option'); opt.value=est.id; opt.textContent=est.id+'（由經度估算）'; $('tz').appendChild(opt); }
+    $('tz').value=est.id;
+    $('msg').textContent='已依經度估算時區為 '+est.id+'（經度÷15 四捨五入，不考慮國界與夏令時，僅供記錄，不會改寫你填的鐘錶時間）。';
+    rerun();
+  };
+})();
 var q=window.HeluoCases&&HeluoCases.fromURL(); if(q) applySettings(q);
 schoolsUI(); render();
 })();

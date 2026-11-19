@@ -33,7 +33,8 @@ footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
 .btnlike{display:inline-block;padding:6px 10px;border:1px solid #c9b896;border-radius:6px;background:#fff;cursor:pointer;color:var(--ink);font-size:1em;flex-direction:row}
 #modeSw button.on{background:var(--red);color:#fff}#modeSw button{border-radius:20px;padding:6px 16px}
 .err{background:#fde3df;border-color:#c0392b}
-@media print{.noprint,header p,#modeSw,.schools,#schoolInfo,.form,.sub.hint,footer{display:none!important}body{background:#fff}.card{box-shadow:none;break-inside:auto}details{display:block}details>*{display:block}main{max-width:none}section.card:first-of-type{display:none}}
+.cite{font-size:.8em;color:var(--mut);margin:6px 0}.setup .form{margin-top:8px}
+@media print{.noprint,header p,#modeSw,.schools,#schoolInfo,.setup,.form,.sub.hint,footer{display:none!important}body{background:#fff}.card{box-shadow:none;break-inside:auto}details{display:block}details>*{display:block}main{max-width:none}section.card:first-of-type{display:none}}
 </style><script src="https://regulusab.github.io/nav/nav.js" defer></script>
 </head><body>
 <header><h1>河洛理數批命</h1><p>陳希夷・邵康節遺法　以生辰八字起卦，推先後天卦、元堂、大運、流年流月</p></header>
@@ -65,6 +66,31 @@ footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
 <h3>派別切換</h3><div class="schools" id="schools"></div>
 <div id="schoolInfo" class="sub"></div>
 </section>
+<section class="card setup" id="setup"><h2>起課設置</h2>
+<div class="form">
+<label>時間精度<select id="prec">
+<option value="exact">確切時刻</option>
+<option value="pm15">±15 分鐘</option>
+<option value="pm60">±60 分鐘</option>
+<option value="shichen">僅知時辰</option>
+<option value="unknown">時刻不明</option>
+</select></label>
+<label>出生地<select id="place"></select></label>
+<label>經度（東經為正，西經為負）<input id="lon" type="number" step="0.01" min="-180" max="180" placeholder="例：121.57"></label>
+<label>緯度（北緯為正）<input id="lat" type="number" step="0.01" min="-90" max="90" placeholder="例：25.04"></label>
+<label>時區<select id="tz"></select></label>
+<button type="button" id="tzFromLon">依經緯度推算時區</button>
+</div>
+<p class="sub">時區、經緯度只供記錄、估算時區，以及東經 70° 日界線。起卦一律用你填的鐘錶時間，不換算真太陽時，也不扣除夏令時間。未填經度則不套用日界線。河洛換日預設為午夜 0:00。</p>
+<div class="form">
+<label>取化工法<select id="hg">
+<option value="cardinal" selected>直取四方伯（預設）</option>
+<option value="tuwang">土王寄坤艮（坤艮十八日）</option>
+</select></label>
+</div>
+<div class="warn"><b>安元堂法（原典，本站固定，不可切換）</b>：陽時自子起數本卦陽爻、陰時自午起數陰爻，皆自初爻向上。一、二爻先重數再寄於異爻（寄從初爻起），三爻重數不寄，四、五爻不重只寄；乾坤另依二至或月陰陽定順逆。不提供「寄爻順起」，該詞不見於原典，來源待核。<div class="cite">來源：《河洛理數》卷一〈詳元堂爻位式〉〈起元堂詩〉，<a href="https://www.shidianguji.com/zh/book/NA09030/chapter/1m8od60nhc1me" target="_blank" rel="noopener">識典 NA09030</a></div></div>
+<p class="sub">卦氣採孟喜／京房「六日七分」（自冬至中孚起），不提供「大衍新法」（名稱未見於原典，來源待核）。日卦依原典〈起日卦定式〉一卦管六日；置閏細部（每日添一刻七分）來源待核，超過三十日則不另指定日卦。</p>
+</section>
 <section class="card noprint"><h2>命例與輸出</h2>
 <div class="form">
 <label>命例名稱<input id="caseName" placeholder="例：王先生" size="14"></label>
@@ -84,6 +110,6 @@ footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
 <div id="out"></div>
 <footer>資料來源：使用者提供之《河洛理數》原典掃描本、《河洛理數推命術》、《河洛理數斷文》、《歲運六十四卦訣》、鍾月萍《新編河洛理數論命》、崔仁慧《河洛理數入門起例講義》；卦爻辭取自《周易》原文。本站僅供文化研究參考。</footer>
 </main>
-<script src="lunar.js"></script><script src="data.js"></script><script src="engine.js"></script><script src="calc.js"></script>
+<script src="lunar.js"></script><script src="data.js"></script><script src="engine.js"></script><script src="place.js"></script><script src="guaql.js"></script><script src="calc.js"></script>
 <script src="cases.js"></script><script src="export.js"></script><script src="app.js"></script>
 </body></html>

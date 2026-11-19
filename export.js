@@ -20,6 +20,11 @@ function model(){
   out.push({p:'派別：'+L.school.name+'　（依據：'+L.school.src+'）'});
   out.push({p:'輸入方式：'+(st.mode==='manual'?'手動輸入四柱':'西曆生辰')+'　性別：'+(st.sex==='1'?'男（乾造）':'女（坤造）')+'　陰陽男女依：'+(st.pol==='hour'?'時干':'年干')+(R.startAge>1?'　起運虛歲：'+R.startAge:'')});
   out.push({p:'西曆：'+R.solarText+'　農曆／四柱：'+R.lunarText});
+  if(st.prec&&st.prec!=='exact') out.push({p:'時間精度：'+((window.HeluoPlace&&HeluoPlace.PREC_LABEL[st.prec])||st.prec)});
+  if(st.place||st.lon||st.tz) out.push({p:'出生地／經緯度／時區：'+(st.place||'')+' '+(st.lon!=null&&st.lon!==''?('經度 '+st.lon+'°'):'')+' '+(st.lat!=null&&st.lat!==''?('緯度 '+st.lat+'°'):'')+' '+(st.tz||'')});
+  if(R.dayLine&&R.dayLine.applied) out.push({p:'東經70°以西，日柱依老師裁定加一天（鐘錶時，不做真太陽時）。'});
+  if(R.precWarnings&&R.precWarnings.length) out.push({p:'時間精度提醒：'+R.precWarnings.join('；')});
+  out.push({p:'化工取法：'+(st.hg==='tuwang'?'土王寄坤艮（坤艮十八日）':'直取四方伯')+(R.huagongInfo&&R.huagongInfo.note?('。'+R.huagongInfo.note):'')});
   out.push({table:[['','年柱','月柱','日柱','時柱'],['干支'].concat(R.pillars)]});
   out.push({p:(R.yangP?'陽':'陰')+(st.sex==='1'?'男':'女')+'・'+(R.shun?'天數卦在上':'地數卦在上')+'・'+R.yuan});
   out.push({h2:'一、天地數'});
@@ -45,6 +50,13 @@ function model(){
     if(h.dw){ out.push({h3:'斷文・卦論'}); out.push({p:h.dw}); }
     out.push({h3:'斷文・'+yn(b,p)}); out.push({p:h.dwy[p]||'（來源缺）'});
     if(h.sy){ out.push({h3:'歲運卦訣'}); out.push({p:h.sy+'\n'+(h.syy[p]||'')}); } }
+  if(R.guaQi||R.riGua){
+    out.push({h2:'節候卦氣・日卦'});
+    if(R.guaQi&&!R.guaQi.error){ var sf=R.guaQi.sifang||{}; out.push({p:'節候正卦：'+(sf.gua||'')+(sf.yao||'')+'　值節：'+(sf.jie||'')+'　六十卦卦氣：'+(R.guaQi.gua||'')+'（第 '+(R.guaQi.index+1)+'／60）'}); out.push({p:(R.guaQi.note||'')+' 來源：'+(R.guaQi.src||'')}); }
+    else if(R.guaQi) out.push({p:'卦氣：'+(R.guaQi.error||'未排')});
+    if(R.riGua&&!R.riGua.error&&R.riGua.bits){ out.push({p:'日卦：'+X[R.riGua.bits].full+'　日爻 '+yn(R.riGua.bits,R.riGua.pos)+'　本月節 '+R.riGua.monthJie+'　距節 '+R.riGua.daysFromJie+' 日'}); out.push({p:(R.riGua.note||'')+' 來源：'+(R.riGua.src||'')}); }
+    else if(R.riGua) out.push({p:'日卦：'+(R.riGua.error||R.riGua.note||'未排')});
+  }
   texts('六、先天卦批文',R.xian.bits,R.xian.pos); texts('七、後天卦批文',R.hou.bits,R.hou.pos);
   texts('八、本大運（'+L.D.from+'–'+L.D.to+'歲）',L.D.bits,L.D.pos); texts('九、'+L.Y.year+'流年',L.Y.bits,L.Y.changed);
   out.push({h2:'派別要點與歧義說明'}); (window.HeluoNotes[L.school.id]||[]).forEach(function(n){ out.push({p:'・'+strip(n)}); });
