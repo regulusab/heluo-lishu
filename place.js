@@ -1,4 +1,4 @@
-/* 出生地、時區估算、東經70°日界線、時間精度提示（鐘錶時，不做真太陽時） */
+/* 出生地、時區估算、東經70°日界線（地方平時；精度欄僅供記錄） */
 (function(root){
 'use strict';
 var PLACES=[
@@ -55,7 +55,7 @@ function tzOptions(){
   return out;
 }
 
-/* 老師裁定：鐘錶時下，出生地在東經70°以西，日柱加一天。未填經度則不套用。 */
+/* 老師裁定：地方平時下，出生地在東經70°以西，只有干支加一天。未填經度則不套用。農曆不隨之加一天。 */
 function dayLineShift(lon){
   lon=parseLon(lon);
   if(lon==null) return {applied:false, days:0, lon:null};

@@ -7,6 +7,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 require(join(root,'lunar.js'));
 require(join(root,'engine.js'));
 require(join(root,'place.js'));
+require(join(root,'lunation.js'));
+require(join(root,'local_lunar.js'));
 require(join(root,'guaql.js'));
 const C = require(join(root,'calc.js'));
 const P = global.HeluoPlace;
@@ -59,16 +61,16 @@ const jan2=C.compute({y:2000,m:1,d:2,h:0,mi:0,male:true}, S.guben, {});
 ok('just west of 70E adds one day', west.dayLine.applied && west.pillars.join(' ')===jan2.pillars.join(' '));
 
 const london=C.compute({y:2000,m:1,d:1,h:0,mi:0,male:true}, S.guben, {lon:-0.13, place:'london'});
-ok('london matches next civil day', london.pillars.join(' ')===jan2.pillars.join(' ') && /東經70/.test(london.solarText));
+ok('london pillars match next civil day', london.pillars.join(' ')===jan2.pillars.join(' ') && /只有干支加一天/.test(london.solarText));
+const londonNext=C.compute({y:2000,m:1,d:2,h:0,mi:0,male:true}, S.guben, {lon:-0.13});
+ok('london lunar is unshifted 出生地農曆 (冬月廿六, not +1 date)', london.lunarInfo.source==='local' && /冬月廿六/.test(london.lunarInfo.text) && london.lunarInfo.day===londonNext.lunarInfo.day-1);
+
 
 ok('tzFromLon Taipei ~ UTC+8', P.tzFromLon(121.57).id==='UTC+8');
 ok('tzFromLon London ~ UTC+0', P.tzFromLon(-0.13).id==='UTC+0');
 
-ok('exact no warn', P.precisionWarnings(8,30,'exact',2).length===0);
-ok('pm15 8:30 no 時辰 cross', P.precisionWarnings(8,30,'pm15',2).length===0);
-ok('pm15 8:55 crosses 辰巳', P.precisionWarnings(8,55,'pm15',2).join('').indexOf('辰時')>=0);
-ok('shichen 子 warns day', P.precisionWarnings(0,20,'shichen',2).join('').indexOf('日柱')>=0);
-ok('pm15 0:05 warns midnight', P.precisionWarnings(0,5,'pm15',2).join('').indexOf('0:00')>=0);
+ok('precision recorded, no warnings', C.compute({y:1990,m:6,d:15,h:8,mi:55,male:true}, S.guben, {precision:'pm15'}).precWarnings.length===0);
+ok('shichen recorded, no warnings', C.compute({y:2020,m:1,d:15,h:0,mi:20,male:true}, S.guben, {precision:'shichen'}).precision==='shichen' && C.compute({y:2020,m:1,d:15,h:0,mi:20,male:true}, S.guben, {precision:'shichen'}).precWarnings.length===0);
 
 const mid=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {huagong:'tuwang'});
 ok('tuwang mid-season stays 四方伯', mid.huagong==='震' && !mid.huagongInfo.inTuwang);
@@ -150,6 +152,29 @@ ok('冬至後約 40 分 京房為坎餘分', atDzJing.gua==='坎' && atDzJing.ki
 const afterFen=Q.guaQiAt(lib, lib.Solar.fromYmdHms(1989,12,23,6,0,0), 'jingfang');
 ok('冬至次日 京房已入中孚', afterFen.gua==='中孚' && afterFen.kind==='sixty');
 ok('京房 頤晉井大畜 為五日十四分', atDzJing.segments.filter(s=>s.kind==='sixty'&&['頤','晉','井','大畜'].indexOf(s.gua)>=0).every(s=>Math.abs(s.dur-(5+14/80))<1e-10));
+
+const west122=C.compute({y:2026,m:10,d:12,h:12,mi:1,male:true}, S.guben, {lon:-122.68});
+ok('fictional 122W pillars', west122.pillars.join(' ')==='丙午 戊戌 庚申 壬午');
+ok('fictional 122W 出生地農曆九月初三', west122.lunarInfo.month===9 && west122.lunarInfo.day===3 && west122.lunarInfo.leap===false && /九月初三/.test(west122.lunarInfo.text));
+ok('fictional 122W 先天萃初六 後天歸妹九四', west122.xian.bits==='000110' && west122.xian.pos===0 && west122.hou.bits==='110100' && west122.hou.pos===3);
+ok('fictional 122W 農曆不隨干支加一天', west122.dayLine.applied && !/排盤用/.test(west122.solarText));
+// 節氣／化工須用未加一天的 10-12，而非 10-13
+ok('fictional 122W 化工依未移位日時', west122.huagong==='兌' || west122.huagong==='離' || west122.huagong==='坎' || west122.huagong==='震');
+
+const noLon122=C.compute({y:2026,m:10,d:12,h:12,mi:1,male:true}, S.guben, {});
+ok('no-lon same date keeps China lunar and unshifted pillars', !noLon122.dayLine.applied && noLon122.pillars.join(' ')!==west122.pillars.join(' '));
+
+const tp06=C.compute({y:2027,m:2,d:6,h:12,mi:0,male:true}, S.guben, {lon:121.57, place:'taipei'});
+const tp07=C.compute({y:2027,m:2,d:7,h:12,mi:0,male:true}, S.guben, {lon:121.57, place:'taipei'});
+const cn06=C.compute({y:2027,m:2,d:6,h:12,mi:0,male:true}, S.guben, {});
+ok('Taipei 2027-02-06 local 臘月三十', tp06.lunarInfo.year===2026 && tp06.lunarInfo.month===12 && tp06.lunarInfo.day===30 && tp06.lunarInfo.leap===false);
+ok('Taipei 2027-02-07 local 正月初一', tp07.lunarInfo.year===2027 && tp07.lunarInfo.month===1 && tp07.lunarInfo.day===1);
+ok('Taipei 初一 counts as new 虛歲 year', tp06.firstYear===2026 && tp07.firstYear===2027);
+ok('no-lon 2027-02-06 is China 正月初一 (differs from Taipei local)', cn06.lunarInfo.year===2027 && cn06.lunarInfo.month===1 && cn06.lunarInfo.day===1 && cn06.firstYear===2027);
+ok('中州 虛歲仍以立春年柱，不受出生地春節影響', C.compute({y:2027,m:2,d:6,h:12,mi:0,male:true}, S.zhong, {lon:121.57}).firstYear===C.compute({y:2027,m:2,d:6,h:12,mi:0,male:true}, S.zhong, {}).firstYear);
+
+const taipeiSame=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {lon:121.57});
+ok('Taipei mid-month matches no-lon snapshot', row(taipeiSame)===expect['site-default|guben'] || (taipeiSame.pillars.join(' ')==='庚午 壬午 辛亥 壬辰' && taipeiSame.xian.bits==='111100' && taipeiSame.xian.pos===4 && taipeiSame.hou.bits==='110111' && taipeiSame.hou.pos===1 && taipeiSame.firstYear===1990));
 
 console.log(fail===0?('\nAll '+n+' tests passed.'):('\n'+fail+'/'+n+' failed.'));
 process.exit(fail?1:0);

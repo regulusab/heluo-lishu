@@ -62,13 +62,13 @@ footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
 <label>指定流年（西元或干支）<input id="focus" placeholder="例：2026 或 丙午" size="12"></label>
 <button class="btn" id="go">起　卦</button>
 </div>
-<p class="sub">時間請照出生地鐘錶上的記錄填寫，不必自行換算：不扣除夏令時間，也不做真太陽時校正。河洛換日預設為午夜 0:00。日期由 lunar-javascript 換算農曆與節氣四柱。手動模式下干支陰陽不配會擋下計算；五虎遁、五鼠遁不合只提示不阻擋。</p>
+<p class="sub">請填你已自行換算好的出生地「地方平時」：夏令時請先扣除，並按出生地經度換成地方平時（世界時＋經度×4分鐘）。本站照你填的時間起算，不再自行換算。河洛換日預設為午夜 0:00。東經 70° 以西：只有干支加一天（日柱及依新日干五鼠遁重排時柱；跨節則年月柱隨之），農曆日以出生地合朔重算，不加一天。未填經度時農曆依東八區／中國農曆。手動模式下干支陰陽不配會擋下計算；五虎遁、五鼠遁不合只提示不阻擋。</p>
 <h3>派別切換</h3><div class="schools" id="schools"></div>
 <div id="schoolInfo" class="sub"></div>
 </section>
 <section class="card setup" id="setup"><h2>起課設置</h2>
 <div class="form">
-<label>時間精度<select id="prec">
+<label>時間精度（僅記錄）<select id="prec">
 <option value="exact">確切時刻</option>
 <option value="pm15">±15 分鐘</option>
 <option value="pm60">±60 分鐘</option>
@@ -81,7 +81,7 @@ footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
 <label>時區<select id="tz"></select></label>
 <button type="button" id="tzFromLon">依經緯度推算時區</button>
 </div>
-<p class="sub">時區、經緯度只供記錄、估算時區，以及東經 70° 日界線。起卦一律用你填的鐘錶時間，不換算真太陽時，也不扣除夏令時間。未填經度則不套用日界線。河洛換日預設為午夜 0:00。</p>
+<p class="sub">時區欄只供記錄（或依經度估算）。經度用於出生地農曆（合朔改為該經度的地方平時）以及東經 70° 日界線。請填已自行換算的地方平時：夏令時請先扣除，並按出生地經度換成地方平時。東經 70° 以西只有干支加一天，農曆日以出生地合朔重算。未填經度則不套用日界線，農曆依東八區／中國農曆。河洛換日預設為午夜 0:00。時間精度只作記錄，誤差由使用者自行吸收，不另警示。</p>
 <div class="form">
 <label>安元堂法<select id="yt">
 <option value="chu" selected>寄爻初起（預設）</option>
@@ -131,6 +131,6 @@ footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
 <div id="out"></div>
 <footer>資料來源：使用者提供之《河洛理數》原典掃描本、《河洛理數推命術》、《河洛理數斷文》、《歲運六十四卦訣》、鍾月萍《新編河洛理數論命》、崔仁慧《河洛理數入門起例講義》；卦爻辭取自《周易》原文。本站僅供文化研究參考。</footer>
 </main>
-<script src="lunar.js"></script><script src="data.js"></script><script src="engine.js"></script><script src="place.js"></script><script src="guaql.js"></script><script src="calc.js"></script>
+<script src="lunar.js"></script><script src="data.js"></script><script src="engine.js"></script><script src="place.js"></script><script src="lunation.js"></script><script src="local_lunar.js"></script><script src="guaql.js"></script><script src="calc.js"></script>
 <script src="cases.js"></script><script src="export.js"></script><script src="app.js"></script>
 </body></html>

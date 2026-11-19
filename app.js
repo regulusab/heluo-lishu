@@ -81,9 +81,9 @@ function render(){
   var out='';
   // 四柱
   out+='<section class="card"><h2>一、四柱與天地數</h2><div class="grid"><div><div class="pillars">'+['年','月','日','時'].map(function(n,i){return '<div>'+n+'柱<b>'+R.pillars[i]+'</b></div>';}).join('')+'</div>'
-   +'<p>西曆 '+(R.clockText&&R.dayLine&&R.dayLine.applied?esc(R.clockText)+'（鐘錶）<br>'+esc(R.solarText):esc(R.solarText))+'<br>農曆 '+R.lunarText+'<br>'+(R.yangYear?'陽':'陰')+'年生'+(inp.male?'男':'女')+'・'+(R.shun?'天數卦在上':'地數卦在上')+'（'+(R.yangP?'陽':'陰')+(inp.male?'男':'女')+'，依'+(opts().polarity==='hour'?'時干':'年干')+'）・'+R.yuan+(R.precision&&R.precision!=='exact'?'　時間精度：'+(window.HeluoPlace&&HeluoPlace.PREC_LABEL[R.precision]||R.precision):'')+(R.place||R.lon!=null?'　出生地：'+esc(placeLabel(R)):'')+'</p>'
-   +(R.precWarnings&&R.precWarnings.length?'<div class="warn"><b>時間精度提醒</b><ul>'+R.precWarnings.map(function(w){return '<li>'+esc(w)+'</li>';}).join('')+'</ul></div>':'')
-   +(R.dayLine&&R.dayLine.applied?'<div class="warn">出生地經度 '+R.dayLine.lon+'°（東經70°以西），日柱依老師裁定加一天。用鐘錶時，不做真太陽時校正。</div>':'')+'</div>';
+   +'<p>地方平時 '+esc(R.clockText||R.solarText)+'<br>'+(R.lunarInfo&&R.lunarInfo.source==='local'?'出生地農曆 ':'農曆 ')+esc(R.lunarInfo? (R.lunarInfo.text+' '+R.pillars[3][1]+'時') : R.lunarText)+'<br>'+(R.yangYear?'陽':'陰')+'年生'+(inp.male?'男':'女')+'・'+(R.shun?'天數卦在上':'地數卦在上')+'（'+(R.yangP?'陽':'陰')+(inp.male?'男':'女')+'，依'+(opts().polarity==='hour'?'時干':'年干')+'）・'+R.yuan+(R.precision&&R.precision!=='exact'?'　時間精度（記錄）：'+(window.HeluoPlace&&HeluoPlace.PREC_LABEL[R.precision]||R.precision):'')+(R.place||R.lon!=null?'　出生地：'+esc(placeLabel(R)):'')+'</p>'
+   +(R.lunarInfo&&R.lunarInfo.note?'<p class="cite">'+esc(R.lunarInfo.note)+'</p>':'')
+   +(R.dayLine&&R.dayLine.applied?'<div class="warn">出生地經度 '+R.dayLine.lon+'°（東經70°以西）：只有干支加一天（日柱及由新日干依五鼠遁重排時柱；若跨節，年月柱隨之）。農曆日以出生地合朔重算，不用加一天後的日期。</div>':'')+'</div>';
   out+='<div><table><tr><th>字</th>'+R.detail.map(function(d){return '<td>'+d.ch+'</td>';}).join('')+'</tr><tr><th>數</th>'+R.detail.map(function(d){return '<td>'+d.nums.join('、')+'</td>';}).join('')+'</tr></table>'
    +'<p>天數（奇）<b>'+R.tian+'</b>：'+R.tr.steps.join(' ')+' → 取 <b>'+R.tr.value+'</b> → '+R.tT.t+(R.tT.ji?'（五寄宮）':'')+'<br>地數（偶）<b>'+R.di+'</b>：'+R.dr.steps.join(' ')+' → 取 <b>'+R.dr.value+'</b> → '+R.dT.t+(R.dT.ji?'（五寄宮）':'')+'</p>'
    +'<div class="sub">天數過 25 減 25、地數過 30 減 30；餘數取個位，整十取十位。推命術言「減去 25 的倍數」，若恰為 25／50 之類，本站取 5 寄宮（各派皆同）。</div></div></div>';
@@ -101,7 +101,7 @@ function render(){
   // 大運
   out+='<section class="card"><h2>三、大運（陽爻九年、陰爻六年，虛歲）</h2><table><tr><th>卦</th><th>運爻</th><th>年歲</th><th>西元</th><th>起運年干</th></tr>';
   R.dayun.forEach(function(d,i){ out+='<tr class="click'+(state.dy===i?' sel':'')+'" data-dy="'+i+'"><td>'+d.gua+' '+hx(d.bits).name+'</td><td>'+yaoName(d.bits,d.pos)+'</td><td>'+d.from+'–'+d.to+'</td><td>'+d.yearFrom+'–'+d.yearTo+'</td><td>'+d.firstStem+(d.firstYang?'（陽）':'（陰）')+'</td></tr>'; });
-  out+='</table><p class="sub">點選任一大運以展開流年。'+(cur==='guben'?'古本以正月初一為歲首':'本派以立春為歲首')+'計算西元年。</p>';
+  out+='</table><p class="sub">點選任一大運以展開流年。'+(cur==='guben'?'古本以出生地農曆正月初一為歲首（已是當地初一即算新歲）':'本派以立春為歲首')+'計算西元年。</p>';
   var now=new Date().getFullYear(), fy=focusYear(R); if(fy) now=fy; if(state.dy===null){ state.dy=0; R.dayun.forEach(function(d,i){ if(now>=d.yearFrom&&now<=d.yearTo) state.dy=i; }); }
   var D=R.dayun[Math.min(state.dy,R.dayun.length-1)];
   out+='<h3>流年：'+D.gua+'卦 '+hx(D.bits).name+' '+yaoName(D.bits,D.pos)+'運（'+D.from+'–'+D.to+'歲）</h3><table><tr><th>虛歲</th><th>西元</th><th>干支</th><th>流年卦</th><th>流年元堂</th></tr>';
@@ -187,7 +187,7 @@ window.HeluoApp={settings:settings, applySettings:function(o){ applySettings(o);
     var opt=$('tz').querySelector('option[value="'+est.id+'"]');
     if(!opt){ opt=document.createElement('option'); opt.value=est.id; opt.textContent=est.id+'（由經度估算）'; $('tz').appendChild(opt); }
     $('tz').value=est.id;
-    $('msg').textContent='已依經度估算時區為 '+est.id+'（經度÷15 四捨五入，不考慮國界與夏令時，僅供記錄，不會改寫你填的鐘錶時間）。';
+    $('msg').textContent='已依經度估算時區為 '+est.id+'（經度÷15 四捨五入，不考慮國界與夏令時，僅供記錄，不會改寫你填的地方平時）。';
     rerun();
   };
 })();
