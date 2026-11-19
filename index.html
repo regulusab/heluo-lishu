@@ -83,13 +83,34 @@ footer{text-align:center;color:var(--mut);font-size:.85em;padding:20px}
 </div>
 <p class="sub">時區、經緯度只供記錄、估算時區，以及東經 70° 日界線。起卦一律用你填的鐘錶時間，不換算真太陽時，也不扣除夏令時間。未填經度則不套用日界線。河洛換日預設為午夜 0:00。</p>
 <div class="form">
+<label>安元堂法<select id="yt">
+<option value="chu" selected>寄爻初起（預設）</option>
+<option value="shun">寄爻順起（通變）</option>
+</select></label>
+<label>起日卦法<select id="rg">
+<option value="tian5" selected>天五地六（預設）</option>
+<option value="di6">地六天五</option>
+</select></label>
+<label>日卦置閏<select id="rz" disabled title="來源待核，未實作">
+<option value="0" selected>關閉（預設）</option>
+<option value="1">開啟（未實作）</option>
+</select></label>
 <label>取化工法<select id="hg">
 <option value="cardinal" selected>直取四方伯（預設）</option>
-<option value="tuwang">土王寄坤艮（坤艮十八日）</option>
+<option value="tuwang">土王寄坤艮（丑辰艮、未戌坤）</option>
+</select></label>
+<label>排卦氣法<select id="gq">
+<option value="dayan" selected>大衍新法（預設）</option>
+<option value="jingfang">京房古法</option>
 </select></label>
 </div>
-<div class="warn"><b>安元堂法（原典，本站固定，不可切換）</b>：陽時自子起數本卦陽爻、陰時自午起數陰爻，皆自初爻向上。一、二爻先重數再寄於異爻（寄從初爻起），三爻重數不寄，四、五爻不重只寄；乾坤另依二至或月陰陽定順逆。不提供「寄爻順起」，該詞不見於原典，來源待核。<div class="cite">來源：《河洛理數》卷一〈詳元堂爻位式〉〈起元堂詩〉，<a href="https://www.shidianguji.com/zh/book/NA09030/chapter/1m8od60nhc1me" target="_blank" rel="noopener">識典 NA09030</a></div></div>
-<p class="sub">卦氣採孟喜／京房「六日七分」（自冬至中孚起），不提供「大衍新法」（名稱未見於原典，來源待核）。日卦依原典〈起日卦定式〉一卦管六日；置閏細部（每日添一刻七分）來源待核，超過三十日則不另指定日卦。</p>
+<div class="cite">
+<p><b>安元堂法</b>　寄爻初起（App 說明）：凡陽時入陽爻，陰時入陰爻，陰不足則寄陽，陽不足則寄陰。此法不論本位，寄爻皆自初爻起，為常用之法。此即本站原有實作，並與原典〈詳元堂爻位式〉諸例（如小畜陰時午未在四爻、申時寄初爻）相符。<a href="https://www.shidianguji.com/zh/book/NA09030/chapter/1m8od60nhc1me" target="_blank" rel="noopener">識典 NA09030</a>　寄爻順起（App 說明）：此法依於本位而起寄爻，如本已在四位，則寄爻自五爻起，過上位之後再入初位，為通變之法。原典未見「順起」一詞，來源待核。本站解讀：本位＝本類爻數完（一、二爻含重數）後所在之爻，寄爻只取異類、自其上一爻環繞。</p>
+<p><b>起日卦法</b>　天五地六（App 說明）：先變月卦之五爻而成五卦，每卦再自初爻輪上，蓋動中有靜。此即原典〈起日卦定式〉「其餘五爻五卦、一卦管六日」，本站預設、行為與舊版相同。　地六天五（App 說明）：以奇日變陽爻，偶日變陰爻。月卦六變而五日一輪，蓋靜中有動。原典未載此法，實作依 App 文解讀（見計算註記），來源待核。</p>
+<p><b>日卦置閏</b>　App 有此開關但無說明。原典〈定時刻法〉僅言「每日該添一刻七分」「每一月寄五時辰」，並提及寅申巳亥多一刻，但未說明超過三十日時日卦如何歸屬，故不實作，開關停用。來源待核。超過三十日則不另指定日卦。</p>
+<p><b>取化工法</b>　直取四方伯（App 說明）：以春分後取震，夏至後取離，即卦氣四方伯之位，而不列坤艮。此即原典〈論化工〉二分二至取坎震離兌，本站預設。　土王寄坤艮（App 說明）：於四立前十八日土王之時取坤艮作化工，凡丑辰陽遁之月取艮，未戌陰月取坤。即立春前（丑）艮、立夏前（辰）艮、立秋前（未）坤、立冬前（戌）坤。十八日窗口見原典「每序季月坤艮各旺十八日」。立春前艮、立秋前坤可參《周易·說卦》「成言乎艮」「致役乎坤」。立夏前艮、立冬前坤僅見 App 說明，來源待核。</p>
+<p><b>排卦氣法</b>　大衍新法（預設，與舊版相同。App 說明）：即以六十卦自冬至中孚起算，平分一歲之氣，自唐曆以後，皆襲用之。《新唐書》卷二十七上〈卦議〉：「當據孟氏，自冬至初，中孚用事……坎、震、離、兌，二十四氣，次主一爻，其初則二至、二分也。」<a href="https://zh.wikisource.org/zh-hant/新唐書/卷027上" target="_blank" rel="noopener">維基文庫</a>　京房古法（App 說明）：以四方伯卦入四正交氣日首，借晉、井、大畜、頤之餘分，餘卦仍按六日七分依序均分一歲之氣。同卷：「京氏又以卦爻配期之日，坎、離、震、兌，其用事自分、至之首，皆得八十分日之七十三。頤、晉、井、大畜，皆五日十四分，餘皆六日七分。」</p>
+</div>
 </section>
 <section class="card noprint"><h2>命例與輸出</h2>
 <div class="form">

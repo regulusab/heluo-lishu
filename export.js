@@ -24,7 +24,10 @@ function model(){
   if(st.place||st.lon||st.tz) out.push({p:'出生地／經緯度／時區：'+(st.place||'')+' '+(st.lon!=null&&st.lon!==''?('經度 '+st.lon+'°'):'')+' '+(st.lat!=null&&st.lat!==''?('緯度 '+st.lat+'°'):'')+' '+(st.tz||'')});
   if(R.dayLine&&R.dayLine.applied) out.push({p:'東經70°以西，日柱依老師裁定加一天（鐘錶時，不做真太陽時）。'});
   if(R.precWarnings&&R.precWarnings.length) out.push({p:'時間精度提醒：'+R.precWarnings.join('；')});
-  out.push({p:'化工取法：'+(st.hg==='tuwang'?'土王寄坤艮（坤艮十八日）':'直取四方伯')+(R.huagongInfo&&R.huagongInfo.note?('。'+R.huagongInfo.note):'')});
+  var ytL=st.yt==='shun'?'寄爻順起':'寄爻初起';
+  var rgL=st.rg==='di6'?'地六天五':'天五地六';
+  var gqL=st.gq==='jingfang'?'京房古法':'大衍新法';
+  out.push({p:'起課設置：安元堂 '+ytL+'；日卦 '+rgL+'；置閏關閉（來源待核，未實作）；化工 '+(st.hg==='tuwang'?'土王寄坤艮（丑辰艮、未戌坤）':'直取四方伯')+'；卦氣 '+gqL+'。'+(R.huagongInfo&&R.huagongInfo.note?(' '+R.huagongInfo.note):'')});
   out.push({table:[['','年柱','月柱','日柱','時柱'],['干支'].concat(R.pillars)]});
   out.push({p:(R.yangP?'陽':'陰')+(st.sex==='1'?'男':'女')+'・'+(R.shun?'天數卦在上':'地數卦在上')+'・'+R.yuan});
   out.push({h2:'一、天地數'});

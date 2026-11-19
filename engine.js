@@ -66,12 +66,27 @@ function yuantang(bits, hourZhi, male, opt){
       if(!isQian && male && !opt.yangMonth) rev=true;
       note=(isQian?'乾':'坤')+'卦元堂：依生月陰陽（'+(opt.yangMonth?'陽月':'陰月')+'）'+(rev?'逆排':'順排');
     }
-    return {pos:rev?reverse:standard, note:note};
+    return {pos:rev?reverse:standard, note:note+'（乾坤無寄爻，寄爻初起與順起相同）。', method:(opt&&opt.yuantang==='shun')?'shun':'chu'};
   }
-  if(n===1||n===2) seq=same.concat(same).concat(diff);
-  else if(n===3) seq=same.concat(same);
-  else seq=same.concat(diff);
-  return {pos:seq[idx], note:(yangHour?'陽':'陰')+'時生，卦中'+n+(yangHour?'陽':'陰')+'爻'};
+  // 寄爻初起（預設，原典常用）：不論本位，寄爻自初爻起（diff 已按初→上排列）。
+  // 寄爻順起（App 說明，通變法，來源待核）：本位＝本爻段數完後所在之爻（一、二爻含重數的最後一爻；四、五爻為所行本類最高爻）。寄爻自本位上一爻起，只取異類爻，過上爻入初爻。三爻與乾坤無寄，兩法相同。
+  var prefix, ben, ji, method=(opt&&opt.yuantang==='shun')?'shun':'chu';
+  if(n===3){
+    seq=same.concat(same);
+    return {pos:seq[idx], note:(yangHour?'陽':'陰')+'時生，卦中'+n+(yangHour?'陽':'陰')+'爻；三爻只於本類往來不寄（寄爻初起與順起相同）。', method:method};
+  }
+  if(n===1||n===2){ prefix=same.concat(same); ben=same[same.length-1]; }
+  else { prefix=same.slice(); ben=same[same.length-1]; }
+  if(method==='shun'){
+    ji=[];
+    for(var t=1;t<=6;t++){ var p=(ben+t)%6; if(bits[p]===other) ji.push(p); }
+  } else ji=diff;
+  seq=prefix.concat(ji);
+  var benName=['初','二','三','四','五','上'][ben];
+  var mnote=method==='shun'
+    ? '寄爻順起（App 說明）：本位在'+benName+'爻，寄爻自其上一爻起，過上爻入初爻。來源待核。'
+    : '寄爻初起（原典常用）：不論本位，寄爻皆自初爻起。';
+  return {pos:seq[idx], note:(yangHour?'陽':'陰')+'時生，卦中'+n+(yangHour?'陽':'陰')+'爻。'+mnote, method:method, benwei:ben};
 }
 
 // 後天卦
@@ -149,7 +164,7 @@ function computeFromPillars(P, opt){
   var shun = (P.male===yangP); // 陽男陰女：天上地下
   var up=shun?tT.t:dT.t, lo=shun?dT.t:tT.t;
   var xt=hexBits(up,lo);
-  var o={winterHalf:P.winterHalf, yangMonth:P.yangMonth, qiankun:opt.qiankun, zhizun:opt.zhizun};
+  var o={winterHalf:P.winterHalf, yangMonth:P.yangMonth, qiankun:opt.qiankun, zhizun:opt.zhizun, yuantang:opt.yuantang||'chu'};
   var yt=yuantang(xt,P.hz,P.male,o);
   var ht=houtian(xt,yt.pos,o);
   return {tian:tian,di:di,tr:tr,dr:dr,tT:tT,dT:dT,yuan:yuan,yangYear:yangYear,yangP:yangP,shun:shun,

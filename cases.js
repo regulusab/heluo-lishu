@@ -9,7 +9,7 @@ function msg(t){ $('msg').textContent=t; }
 function refresh(sel){ var l=load(); $('caseList').innerHTML=l.length? l.map(function(c,i){ return '<option value="'+c.id+'">'+escH(c.name)+'（'+(c.settings.mode==='manual'?c.settings.pillars.join(' '):c.settings.date+' '+c.settings.time)+'）</option>'; }).join('') : '<option value="">（無）</option>'; if(sel) $('caseList').value=sel; }
 function escH(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function find(id){ return load().filter(function(c){return c.id===id;})[0]; }
-var PK=['mode','date','time','zi','sex','pol','school','byear','winter','startAge','focus','prec','place','lon','lat','tz','hg'];
+var PK=['mode','date','time','zi','sex','pol','school','byear','winter','startAge','focus','prec','place','lon','lat','tz','hg','yt','rg','rz','gq'];
 function toURL(st){ var u=new URLSearchParams(); PK.forEach(function(k){ if(st[k]!=null&&st[k]!=='') u.set(k,st[k]); }); if(st.mode==='manual') u.set('p',st.pillars.join(''));
   else u.delete('byear'); return location.origin+location.pathname+'?'+u.toString(); }
 function fromURL(){ var u=new URLSearchParams(location.search); if(!u.has('mode')&&!u.has('date')&&!u.has('p')) return null; var o={};

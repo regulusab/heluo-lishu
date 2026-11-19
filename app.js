@@ -38,10 +38,10 @@ function getPillars(){ return [0,1,2,3].map(function(i){ return $('pg'+i).value+
 function settings(){
   return {mode:mode, date:$('date').value, time:$('time').value, zi:$('zi').value, sex:$('sex').value, pol:$('pol').value,
     school:cur, pillars:getPillars(), byear:$('byear').value, winter:$('winter').value, startAge:+$('startAge').value||1, focus:$('focus').value.trim(),
-    prec:$('prec').value, place:$('place').value, lon:$('lon').value, lat:$('lat').value, tz:$('tz').value, hg:$('hg').value};
+    prec:$('prec').value, place:$('place').value, lon:$('lon').value, lat:$('lat').value, tz:$('tz').value, hg:$('hg').value, yt:$('yt').value, rg:$('rg').value, rz:$('rz').value, gq:$('gq').value};
 }
 function applySettings(o){ if(!o) return;
-  ['date','time','zi','sex','pol','winter','startAge','focus','prec','place','lon','lat','tz','hg'].forEach(function(k){ if(o[k]!=null&&o[k]!=='') $(k).value=o[k]; });
+  ['date','time','zi','sex','pol','winter','startAge','focus','prec','place','lon','lat','tz','hg','yt','rg','rz','gq'].forEach(function(k){ if(o[k]!=null&&o[k]!==''){ var el=$(k); if(el) el.value=o[k]; } });
   if(o.focus==='') $('focus').value='';
   if(o.school&&S[o.school]) cur=o.school;
   if(o.pillars&&o.pillars.length===4) setPillars(o.pillars);
@@ -66,7 +66,7 @@ function opts(){
   var lon=window.HeluoPlace?HeluoPlace.parseLon($('lon').value):null;
   var lat=window.HeluoPlace?HeluoPlace.parseLon($('lat').value):null;
   return {polarity:$('pol').value, ziSect:+$('zi').value, startAge:+$('startAge').value||1,
-    precision:$('prec').value||'exact', place:$('place').value||'', lon:lon, lat:lat, tz:$('tz').value||'', huagong:$('hg').value||'cardinal'};
+    precision:$('prec').value||'exact', place:$('place').value||'', lon:lon, lat:lat, tz:$('tz').value||'', huagong:$('hg').value||'cardinal', yuantang:$('yt').value||'chu', rigua:$('rg').value||'tian5', guaqi:$('gq').value||'dayan'};
 }
 function calcFor(sc){ var st=settings();
   if(st.mode==='manual') return C.computeManual({pillars:st.pillars, male:st.sex==='1', birthYear:+st.byear, winter:st.winter, startAge:st.startAge}, S[sc], opts());
@@ -140,8 +140,8 @@ function renderGuaQi(R){
   var g=R.guaQi, r=R.riGua;
   if(g&&!g.error){
     var sf=g.sifang||{};
-    s+='<p>節候正卦：<span class="pill">'+(sf.gua||'—')+(sf.yao?sf.yao:'')+'</span>　值節：'+(sf.jie||'—')+'　六十卦卦氣：<span class="pill">'+(g.gua||'—')+'</span>（第 '+(g.index+1)+'／60，自冬至中孚起六日七分）</p>';
-    s+='<p class="cite">'+esc(g.note||'')+' 來源：'+esc((g.src||(Q&&Q.SRC.guaqi)||''))+' 不採用「大衍新法」（來源待核）。</p>';
+    s+='<p>節候正卦：<span class="pill">'+(sf.gua||'—')+(sf.yao?sf.yao:'')+'</span>　值節：'+(sf.jie||'—')+'　卦氣：<span class="pill">'+(g.gua||'—')+'</span>'+(g.index!=null?'（第 '+(g.index+1)+'／60）':'')+(g.method==='jingfang'?'　京房古法':'　大衍新法')+'</p>';
+    s+='<p class="cite">'+esc(g.note||'')+' 來源：'+esc((g.src||(Q&&Q.SRC.guaqi)||''))+'</p>';
   } else s+='<p class="sub">卦氣：'+esc((g&&g.error)||'未排')+'</p>';
   if(r&&!r.error&&r.bits){
     s+='<p>日卦：<span class="pill">'+hx(r.bits).full+'</span>　日爻：<b>'+yaoName(r.bits,r.pos)+'</b>　本月節：'+esc(r.monthJie)+'（第 '+r.month+' 節氣月）　距節 '+r.daysFromJie+' 日　流月卦 '+hx(r.monthBits).name+' '+yaoName(r.monthBits,r.monthPos)+'</p>';
@@ -165,7 +165,7 @@ function focusYear(R){ var f=$('focus').value.trim(); if(!f) return null; if(/^\
 (function(){ var h=''; ['年','月','日','時'].forEach(function(n,i){ h+='<label>'+n+'柱<span style="display:flex;gap:2px"><select id="pg'+i+'">'+H.GAN.split('').map(function(g){return '<option>'+g+'</option>';}).join('')+'</select><select id="pz'+i+'">'+H.ZHI.split('').map(function(z){return '<option>'+z+'</option>';}).join('')+'</select></span></label>'; });
   $('pillarSel').innerHTML=h; setPillars(['癸巳','甲子','丁酉','甲辰']); })();
 function rerun(){ state.dy=null; state.yr=null; render(); }
-['date','time','sex','pol','zi','winter','byear','startAge','focus','prec','place','lon','lat','tz','hg'].forEach(function(id){ $(id).onchange=rerun; });
+['date','time','sex','pol','zi','winter','byear','startAge','focus','prec','place','lon','lat','tz','hg','yt','rg','gq'].forEach(function(id){ $(id).onchange=rerun; });
 [0,1,2,3].forEach(function(i){ $('pg'+i).onchange=$('pz'+i).onchange=function(){ $('pillarTxt').value=getPillars().join(' '); if(i===0) fillYears(); rerun(); }; });
 $('pillarTxt').onchange=function(){ var t=$('pillarTxt').value.replace(/[年月日時柱,，、\s]+/g,''); if(t.length!==8){ $('manWarn').innerHTML='<div class="warn err">請輸入八個字（四柱干支），例：癸巳甲子丁酉甲辰</div>'; return; }
   var pl=[t.slice(0,2),t.slice(2,4),t.slice(4,6),t.slice(6,8)], bad=pl.filter(function(p){return H.GAN.indexOf(p[0])<0||H.ZHI.indexOf(p[1])<0;});

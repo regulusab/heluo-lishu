@@ -30,7 +30,7 @@ function compute(inp, school, opts){
   var mz=mG.charAt(1), mzIdx=H.ZHI.indexOf(mz);
   var yangMonth = school.monthBasis==='lunar' ? (lunarMonth%2===1) : (mzIdx%2===0);
   var P={yg:yG[0],yz:yG[1],mg:mG[0],mz:mG[1],dg:dG[0],dz:dG[1],hg:hG[0],hz:hG[1],male:inp.male,yearNum:yearNum,winterHalf:winterHalf,yangMonth:yangMonth};
-  var R=H.computeFromPillars(P,{qiankun:school.qiankun,zhizun:school.zhizun,polarity:opts.polarity||'year'});
+  var R=H.computeFromPillars(P,{qiankun:school.qiankun,zhizun:school.zhizun,polarity:opts.polarity||'year', yuantang:opts.yuantang||'chu'});
   // 虛歲一歲之年
   var firstYear = school.ageBoundary==='lunarNewYear' ? lunar.getYear() : yearNum;
   finish(R, firstYear, opts.startAge);
@@ -57,8 +57,8 @@ function compute(inp, school, opts){
   R.precWarnings=(root.HeluoPlace?HeluoPlace.precisionWarnings(clockH,clockMi,R.precision,opts.ziSect||2):[]);
   R.place=opts.place||''; R.lon=opts.lon; R.lat=opts.lat; R.tz=opts.tz||'';
   if(root.HeluoGuaQi){
-    R.guaQi=HeluoGuaQi.guaQiAt(lib, solar);
-    R.riGua=HeluoGuaQi.riGuaAt(H, R, lib, solar);
+    R.guaQi=HeluoGuaQi.guaQiAt(lib, solar, opts.guaqi||'dayan');
+    R.riGua=HeluoGuaQi.riGuaAt(H, R, lib, solar, opts.rigua||'tian5');
   }
   return R;
 }
@@ -103,7 +103,7 @@ function computeManual(M, school, opts){
   if(school.monthBasis==='lunar') notes.push('手動模式無農曆日期，本派「陰陽令」以月建推估農曆月（寅月作正月）。');
   var by=+M.birthYear || yearsFor(pl[0]).filter(function(y){return y<=new Date().getFullYear();}).pop();
   var P={yg:pl[0][0],yz:pl[0][1],mg:pl[1][0],mz:pl[1][1],dg:pl[2][0],dz:pl[2][1],hg:pl[3][0],hz:pl[3][1],male:M.male,yearNum:by,winterHalf:winterHalf,yangMonth:yangMonth};
-  var R=H.computeFromPillars(P,{qiankun:school.qiankun,zhizun:school.zhizun,polarity:opts.polarity||'year'});
+  var R=H.computeFromPillars(P,{qiankun:school.qiankun,zhizun:school.zhizun,polarity:opts.polarity||'year', yuantang:opts.yuantang||'chu'});
   finish(R, by, M.startAge);
   R.P=P; R.pillars=pl.slice(); R.manual=true; R.warnings=warnings; R.notes=notes; R.yangMonth=yangMonth; R.winterHalf=winterHalf;
   R.solarText='（手動輸入四柱，西元 '+by+' 年生）'; R.lunarText=pl.join(' ');

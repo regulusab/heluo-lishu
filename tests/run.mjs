@@ -80,7 +80,10 @@ const preQiu=C.compute({y:1990,m:7,d:25,h:12,mi:0,male:true}, S.guben, {huagong:
 ok('tuwang before 立秋 is 坤', preQiu.huagong==='坤' && preQiu.huagongInfo.sourced);
 
 const preXia=C.compute({y:1990,m:4,d:25,h:12,mi:0,male:true}, S.guben, {huagong:'tuwang'});
-ok('tuwang before 立夏 unlabeled', preXia.huagong==null && preXia.huagongInfo.alt.join('/')==='坤/艮' && preXia.huagongInfo.sourced===false);
+ok('tuwang before 立夏 is 艮', preXia.huagong==='艮' && preXia.huagongInfo.inTuwang);
+
+const preDong=C.compute({y:1990,m:10,d:25,h:12,mi:0,male:true}, S.guben, {huagong:'tuwang'});
+ok('tuwang before 立冬 is 坤', preDong.huagong==='坤' && preDong.huagongInfo.inTuwang);
 
 const G=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {});
 ok('芒種 四正 震上', G.guaQi.sifang.gua==='震' && G.guaQi.sifang.jie==='芒種' && G.guaQi.sifang.yaoIndex===5);
@@ -92,7 +95,7 @@ const dz=lib.Solar.fromYmdHms(1989,12,22,5,22,0);
 const atDz=Q.guaQiAt(lib, lib.Solar.fromYmdHms(1989,12,22,6,0,0));
 ok('冬至起中孚', atDz.gua==='中孚' && atDz.index===0);
 
-const PK=['mode','date','time','zi','sex','pol','school','byear','winter','startAge','focus','prec','place','lon','lat','tz','hg'];
+const PK=['mode','date','time','zi','sex','pol','school','byear','winter','startAge','focus','prec','place','lon','lat','tz','hg','yt','rg','rz','gq'];
 function fromURL(qs){
   const u=new URLSearchParams(qs);
   const o={};
@@ -101,9 +104,52 @@ function fromURL(qs){
   return o;
 }
 const old=fromURL('mode=auto&date=1990-06-15&time=08:30&zi=2&sex=1&pol=year&school=guben');
-ok('old link still parses', old.date==='1990-06-15' && old.zi==='2' && !old.prec && !old.hg && !old.lon);
-const neu=fromURL('mode=auto&date=1990-06-15&time=08:30&zi=2&sex=1&pol=year&school=guben&prec=pm15&place=taipei&lon=121.57&lat=25.04&tz=Asia/Taipei&hg=cardinal');
-ok('new link parses settings', neu.prec==='pm15' && neu.place==='taipei' && neu.lon==='121.57' && neu.hg==='cardinal');
+ok('old link still parses', old.date==='1990-06-15' && old.zi==='2' && !old.prec && !old.hg && !old.lon && !old.yt && !old.rg && !old.gq);
+const neu=fromURL('mode=auto&date=1990-06-15&time=08:30&zi=2&sex=1&pol=year&school=guben&prec=pm15&place=taipei&lon=121.57&lat=25.04&tz=Asia/Taipei&hg=cardinal&yt=chu&rg=tian5&gq=dayan');
+ok('new link parses settings', neu.prec==='pm15' && neu.place==='taipei' && neu.lon==='121.57' && neu.hg==='cardinal' && neu.yt==='chu' && neu.rg==='tian5' && neu.gq==='dayan');
+
+const YT=global.Heluo.yuantang;
+// 小畜 111011，一陰在四爻。陰時午未在四爻；申時：初起寄初爻，順起自五爻。
+ok('小畜 申 寄爻初起 初爻', YT('111011','申',true,{yuantang:'chu'}).pos===0);
+ok('小畜 申 寄爻順起 五爻', YT('111011','申',true,{yuantang:'shun'}).pos===4);
+ok('小畜 午 兩法皆四爻', YT('111011','午',true,{yuantang:'chu'}).pos===3 && YT('111011','午',true,{yuantang:'shun'}).pos===3);
+// 萃 000110，二陽在四、五爻。辰時（重數後開始寄）：初起寄初爻，順起本位五爻則寄上爻。
+ok('萃 辰 寄爻初起 初爻', YT('000110','辰',true,{yuantang:'chu'}).pos===0);
+ok('萃 辰 寄爻順起 上爻', YT('000110','辰',true,{yuantang:'shun'}).pos===5);
+// 師 010000，一陽在二爻。寅時開始寄：初起寄初爻，順起本位二爻則寄三爻。
+ok('師 寅 寄爻初起 初爻', YT('010000','寅',true,{yuantang:'chu'}).pos===0);
+ok('師 寅 寄爻順起 三爻', YT('010000','寅',true,{yuantang:'shun'}).pos===2);
+// 三陽無寄，兩法相同（旅 101100 陽在初、三、四？ 101100 = 初、三、四 — that's 3 yang at 0,2,3). Use 火山旅 101100? 旅 is 艮下離上 = 001 101, bits 001101. 3 yang at 2,3,5. Let's use bits with 3 yang: 111000.
+ok('三陽 兩法相同', [0,1,2,3,4,5].every(i=>{
+  const z='子丑寅卯辰巳'[i];
+  return YT('111000',z,true,{yuantang:'chu'}).pos===YT('111000',z,true,{yuantang:'shun'}).pos;
+}));
+ok('乾卦 兩法相同', YT('111111','子',true,{yuantang:'chu',qiankun:'solstice',winterHalf:true}).pos===YT('111111','子',true,{yuantang:'shun',qiankun:'solstice',winterHalf:true}).pos);
+
+const defYt=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {});
+const chuYt=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {yuantang:'chu'});
+ok('default yuantang equals 寄爻初起', row(defYt)===row(chuYt) && defYt.xian.pos===4);
+
+const shunSame=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {yuantang:'shun'});
+ok('site-default 辰時 四陽寄五上 兩法元堂相同', shunSame.xian.pos===defYt.xian.pos && shunSame.xian.bits===defYt.xian.bits);
+
+const defRg=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {});
+const t5=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {rigua:'tian5'});
+ok('default 日卦 equals 天五地六', defRg.riGua.bits===t5.riGua.bits && defRg.riGua.pos===t5.riGua.pos && t5.riGua.method==='tian5');
+const d6=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {rigua:'di6'});
+ok('地六天五 differs or labeled', d6.riGua.method==='di6' && d6.riGua.blocks.length===6 && (d6.riGua.bits!==t5.riGua.bits || d6.riGua.pos!==t5.riGua.pos || d6.riGua.blocks.length!==t5.riGua.blocks.length));
+
+const defGq=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {});
+const dayan=C.compute({y:1990,m:6,d:15,h:8,mi:30,male:true}, S.guben, {guaqi:'dayan'});
+ok('default 卦氣 equals 大衍新法', defGq.guaQi.gua==='家人' && dayan.guaQi.method==='dayan' && dayan.guaQi.gua==='家人');
+
+const atDzDayan=Q.guaQiAt(lib, lib.Solar.fromYmdHms(1989,12,22,6,0,0), 'dayan');
+const atDzJing=Q.guaQiAt(lib, lib.Solar.fromYmdHms(1989,12,22,6,0,0), 'jingfang');
+ok('冬至後約 40 分 大衍仍中孚', atDzDayan.gua==='中孚' && atDzDayan.index===0);
+ok('冬至後約 40 分 京房為坎餘分', atDzJing.gua==='坎' && atDzJing.kind==='sifang');
+const afterFen=Q.guaQiAt(lib, lib.Solar.fromYmdHms(1989,12,23,6,0,0), 'jingfang');
+ok('冬至次日 京房已入中孚', afterFen.gua==='中孚' && afterFen.kind==='sixty');
+ok('京房 頤晉井大畜 為五日十四分', atDzJing.segments.filter(s=>s.kind==='sixty'&&['頤','晉','井','大畜'].indexOf(s.gua)>=0).every(s=>Math.abs(s.dur-(5+14/80))<1e-10));
 
 console.log(fail===0?('\nAll '+n+' tests passed.'):('\n'+fail+'/'+n+' failed.'));
 process.exit(fail?1:0);

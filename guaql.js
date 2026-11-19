@@ -23,10 +23,15 @@ var SRC={
   yuantang:'《河洛理數》卷一〈詳元堂爻位式〉〈起元堂詩〉，識典 https://www.shidianguji.com/zh/book/NA09030/chapter/1m8od60nhc1me',
   huagong:'《河洛理數》卷一〈論化工〉：冬至後春分前坎、春分後夏至前震、夏至後秋分前離、秋分後冬至前兌；並云「每序季月坤艮各旺十八日」。識典同上。',
   shuogua:'《周易·說卦》「致役乎坤」「成言乎艮」。https://zh.wikisource.org/zh-hant/周易/說卦',
-  rigua:'《河洛理數》卷一〈起日卦定式〉：以月卦為主，元堂爻不變，其餘五爻各變一卦，一卦管六日，五六共三十日；須按該月節氣起算。識典同上。',
-  guaqi:'孟喜／京房卦氣：六十卦自冬至中孚起，每卦六日七分。《新唐書》卷二十七上〈卦議〉https://zh.wikisource.org/zh-hant/新唐書/卷027上 、《易學象數論·卦氣一》https://zh.wikisource.org/zh-hant/易學象數論/卦氣一 。四正坎震離兌各爻主一節氣，見同書及《河洛理數》卷一〈定節候卦說〉。六十卦月序見《河洛理數》卷一〈卦氣歌〉。',
+  tuwangApp:'土王歸屬（丑辰陽遁之月取艮，未戌陰月取坤）：App 說明。立春前艮、立秋前坤並可參《說卦》。立夏前艮、立冬前坤僅見 App 說明，原典未拆分，來源待核。',
+  rigua:'《河洛理數》卷一〈起日卦定式〉：以月卦為主，元堂爻不變，其餘五爻各變一卦，一卦管六日，五六共三十日；須按該月節氣起算。識典同上。此即 App「天五地六」。',
+  riguaDi6:'地六天五：App 說明「以奇日變陽爻，偶日變陰爻。月卦六變而五日一輪」。原典〈起日卦定式〉未載此法，細部為本站依 App 文解讀，來源待核。',
+  guaqiDayan:'大衍新法／孟氏：六十卦自冬至中孚起，平分一歲之氣，每卦六日七分；坎震離兌主二十四氣、各爻一節，不占六十卦之日。《新唐書》卷二十七上〈卦議〉：「當據孟氏，自冬至初，中孚用事……坎、震、離、兌，二十四氣，次主一爻，其初則二至、二分也。」https://zh.wikisource.org/zh-hant/新唐書/卷027上 一行稱「自唐曆以後」所用即此（App 謂之大衍新法）。四正節候見《河洛理數》卷一〈定節候卦說〉，月序見〈卦氣歌〉。',
+  guaqiJingfang:'京房古法：《新唐書》卷二十七上〈卦議〉：「京氏又以卦爻配期之日，坎、離、震、兌，其用事自分、至之首，皆得八十分日之七十三。頤、晉、井、大畜，皆五日十四分，餘皆六日七分。」https://zh.wikisource.org/zh-hant/新唐書/卷027上 App 說明：四方伯入四正交氣日首，借晉、井、大畜、頤之餘分。',
   dayline:'日界線（東經70°以西日柱加一天）：老師裁定。鐘錶時，不做真太陽時校正。'
 };
+SRC.guaqi=SRC.guaqiDayan;
+
 
 function jieName(k){ return KEY_NAME[k]||k; }
 
@@ -77,7 +82,7 @@ function jieMonth(lib, solar){
   return {index:MONTH_JIE.indexOf(prev.name), name:prev.name, start:prev, next:next, month:MONTH_JIE.indexOf(prev.name)+1};
 }
 
-/* 直取四方伯；土王則在四立前十八日改取坤艮。立春前取艮、立秋前取坤，據《說卦》；立夏前、立冬前坤艮歸屬來源待核。 */
+/* 直取四方伯；土王則在四立前十八日改取坤艮。丑辰（立春前、立夏前）取艮，未戌（立秋前、立冬前）取坤，據 App 說明。 */
 function huagongAt(lib, solar, method){
   var list=jieqiList(lib, solar.getYear());
   var jd=solar.getJulianDay();
@@ -100,18 +105,10 @@ function huagongAt(lib, solar, method){
   base.method='tuwang';
   if(!hit){ base.note='土王寄坤艮：今日不在四立前十八日內，仍取四方伯 '+cardinal+'。'; return base; }
   base.inTuwang=true; base.period=hit.name;
-  if(hit.name==='立春'){
-    base.trigram='艮'; base.sourced=true;
-    base.note='土王十八日（立春前）：取艮。'+SRC.huagong+' '+SRC.shuogua;
-    return base;
-  }
-  if(hit.name==='立秋'){
-    base.trigram='坤'; base.sourced=true;
-    base.note='土王十八日（立秋前）：取坤。'+SRC.huagong+' '+SRC.shuogua;
-    return base;
-  }
-  base.trigram=null; base.alt=['坤','艮']; base.sourced=false;
-  base.note='土王十八日（'+hit.name+'前）：原典言坤艮各旺十八日，此二節（立夏前、立冬前）何卦屬坤、何卦屬艮來源待核，故不指定單一卦，僅標土旺。';
+  var map={立春:{t:'艮', zhi:'丑'}, 立夏:{t:'艮', zhi:'辰'}, 立秋:{t:'坤', zhi:'未'}, 立冬:{t:'坤', zhi:'戌'}};
+  var asg=map[hit.name];
+  base.trigram=asg.t; base.sourced=true; base.periodZhi=asg.zhi;
+  base.note='土王十八日（'+hit.name+'前，'+asg.zhi+'月）：取'+asg.t+'。'+SRC.huagong+' '+SRC.tuwangApp+(hit.name==='立春'||hit.name==='立秋'?' '+SRC.shuogua:'');
   return base;
 }
 
@@ -128,29 +125,79 @@ function sifangAt(lib, solar){
   return {jie:jie.name};
 }
 
-function guaQiAt(lib, solar){
+function guaQiAt(lib, solar, method){
   var list=jieqiList(lib, solar.getYear());
   var jd=solar.getJulianDay();
   var dz=prevNamed(list, jd, ['冬至']);
   var dzNext=nextNamed(list, jd, ['冬至']);
   if(!dz) return {error:'找不到冬至'};
   var unit=6+7/80;
+  var sifang=sifangAt(lib, solar);
+  method=method||'dayan';
+  if(method==='jingfang'){
+    var segs=[], t=dz.jd, i,g,short,seg=null, FEN=1/80;
+    function add(gua, dur, kind, index){ segs.push({gua:gua, index:index, kind:kind, fromJd:t, toJd:t+dur, dur:dur}); t+=dur; }
+    add('坎', 73*FEN, 'sifang', null);
+    for(i=0;i<60;i++){
+      g=GUAQI_60[i];
+      short=(g==='頤'||g==='晉'||g==='井'||g==='大畜');
+      add(g, short?(5+14*FEN):unit, 'sixty', i);
+      if(g==='晉') add('震', 73*FEN, 'sifang', null);
+      else if(g==='井') add('離', 73*FEN, 'sifang', null);
+      else if(g==='大畜') add('兌', 73*FEN, 'sifang', null);
+    }
+    for(i=0;i<segs.length;i++){ if(jd>=segs[i].fromJd && jd<segs[i].toJd){ seg=segs[i]; break; } }
+    if(!seg) seg=segs[segs.length-1];
+    return {
+      method:'jingfang', gua:seg.gua, index:seg.index, kind:seg.kind, unit:unit,
+      fromJd:seg.fromJd, toJd:seg.toJd, segments:segs,
+      dongzhi:dz, nextDongzhi:dzNext, sifang:sifang,
+      src:SRC.guaqiJingfang,
+      note:'京房古法：四方伯於二分二至之首各占 73/80 日，晉、井、大畜、頤各 5 日 14 分，餘卦仍 6 日 7 分。此時值'+seg.gua+(seg.kind==='sifang'?'（四方伯餘分）':'（六十卦第 '+(seg.index+1)+'）')+'。'
+    };
+  }
   var days=jd-dz.jd;
   var idx=Math.floor(days/unit);
   if(idx<0) idx=0;
   if(idx>59) idx=59;
-  var sifang=sifangAt(lib, solar);
   return {
-    gua:GUAQI_60[idx], index:idx, unit:unit,
+    method:'dayan', gua:GUAQI_60[idx], index:idx, unit:unit, kind:'sixty',
     fromJd:dz.jd+idx*unit, toJd:dz.jd+(idx+1)*unit,
     dongzhi:dz, nextDongzhi:dzNext, sifang:sifang,
-    src:SRC.guaqi,
-    note:'自冬至中孚起，每卦六日七分（6+7/80 日）。四正卦另按節氣值爻，不列入六十卦輪值。'
+    src:SRC.guaqiDayan,
+    note:'大衍新法（本站預設，與舊版相同）：自冬至中孚起，六十卦平分一歲，每卦六日七分（6+7/80 日）。四正卦另按節氣值爻，不占六十卦之日。'
   };
 }
 
-function riGuaAt(H, R, lib, solar){
+function riGuaTian5(H, M){
+  var p=M.changed, blocks=[], k,q;
+  for(k=0;k<5;k++){
+    q=(p+1+k)%6;
+    blocks.push({bits:H.flip(M.bits,q), flipYao:q, startDay:k*6, endDay:k*6+6});
+  }
+  return {blocks:blocks, span:6, count:5, method:'tian5'};
+}
+/* 地六天五（App 說明，原典未載，來源待核）。解讀：月卦六爻皆變（含元堂），奇次（一三五）先取陽爻、偶次（二四六）取陰爻，皆自初爻向上；一類用盡則續用另一類剩餘爻。每變管五日。五日之內，奇日（第 1、3、5 日）取該變卦陽爻為日爻、偶日取陰爻，皆自初爻向上輪值。 */
+function riGuaDi6(H, M){
+  var yang=[], yin=[], i,k,yi=0,ni=0,order=[],blocks=[];
+  for(i=0;i<6;i++) (M.bits[i]==='1'?yang:yin).push(i);
+  for(k=0;k<6;k++){
+    if(k%2===0){ if(yi<yang.length) order.push(yang[yi++]); else order.push(yin[ni++]); }
+    else { if(ni<yin.length) order.push(yin[ni++]); else order.push(yang[yi++]); }
+  }
+  for(k=0;k<6;k++) blocks.push({bits:H.flip(M.bits,order[k]), flipYao:order[k], startDay:k*5, endDay:k*5+5});
+  return {blocks:blocks, span:5, count:6, method:'di6', order:order};
+}
+function riGuaDayPos(block, dayIn, method){
+  if(method!=='di6') return dayIn;
+  var want=(dayIn%2===0)?'1':'0', cands=[], i;
+  for(i=0;i<6;i++) if(block.bits[i]===want) cands.push(i);
+  if(!cands.length) return dayIn%6;
+  return cands[Math.floor(dayIn/2)%cands.length];
+}
+function riGuaAt(H, R, lib, solar, method){
   var year=solar.getYear(), Y=null, i,j,d;
+  method=method||'tian5';
   if(!R||!R.dayun) return {error:'無大運資料，無法起日卦'};
   for(i=0;i<R.dayun.length;i++){
     d=R.dayun[i];
@@ -161,27 +208,25 @@ function riGuaAt(H, R, lib, solar){
   if(sm.error) return {error:sm.error, src:SRC.rigua};
   var months=H.liuyue(Y.bits, Y.changed);
   var M=months[sm.index];
-  var p=M.changed, blocks=[], k,q;
-  for(k=0;k<5;k++){
-    q=(p+1+k)%6;
-    blocks.push({bits:H.flip(M.bits,q), flipYao:q, startDay:k*6, endDay:k*6+6});
-  }
+  var built=method==='di6'?riGuaDi6(H,M):riGuaTian5(H,M);
   var days=Math.floor(solar.getJulianDay()-sm.start.jd);
   var out={
-    year:year, yearBits:Y.bits, yearPos:Y.changed,
+    method:built.method, year:year, yearBits:Y.bits, yearPos:Y.changed,
     monthJie:sm.name, month:sm.month, monthBits:M.bits, monthPos:M.changed,
-    jieStart:sm.start, blocks:blocks, daysFromJie:days, leftover:days>=30,
-    src:SRC.rigua,
-    note:'以流月卦為主，不改變月卦元堂爻，其餘五爻各變一卦、一卦管六日；自本月節氣起算。日爻自下而上，一爻一日。'
+    jieStart:sm.start, blocks:built.blocks, daysFromJie:days, leftover:days>=30,
+    src:method==='di6'?SRC.riguaDi6:SRC.rigua,
+    note:method==='di6'
+      ? '地六天五（App 說明）：月卦六變、五日一輪；奇次變陽爻、偶次變陰爻（自初爻向上，一類用盡則續另一類）。五日之內奇日取陽爻、偶日取陰爻為日爻。原典未載此法，上為本站依 App 文解讀，來源待核。'
+      : '天五地六（原典〈起日卦定式〉，本站預設）：以流月卦為主，不改變月卦元堂爻，其餘五爻各變一卦、一卦管六日；自本月節氣起算。日爻自下而上，一爻一日。蓋動中有靜。'
   };
   if(days<0){ out.error='日期在節氣之前，未排日卦'; return out; }
   if(days>=30){
-    out.note+=' 本節氣月已超過三十日。原典另有「每日添一刻七分、每月寄五時」的置閏說法，細部算法來源待核，故不另指定日卦。';
+    out.note+=' 本節氣月已超過三十日。原典另有「每日添一刻七分、每月寄五時」的置閏說法，細部算法來源待核，置閏開關未啟用，故不另指定日卦。';
     return out;
   }
-  out.block=blocks[Math.floor(days/6)];
+  out.block=built.blocks[Math.floor(days/built.span)];
   out.bits=out.block.bits;
-  out.pos=days%6;
+  out.pos=riGuaDayPos(out.block, days%built.span, built.method);
   return out;
 }
 
